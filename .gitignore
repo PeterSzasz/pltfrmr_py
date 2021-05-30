@@ -1,2 +1,10 @@
 # no assets in git, yet
-assets/*
+assets/_collection/*
+__pycache__/actors.cpython-38.pyc
+__pycache__/actors.cpython-39.pyc
+__pycache__/game_logic.cpython-39.pyc
+__pycache__/level_loader.cpython-38.pyc
+__pycache__/level_loader.cpython-39.pyc
+__pycache__/main_window.cpython-39.pyc
+.vscode/settings.json
+assets/maps/grounds.tsx
