@@ -115,6 +115,12 @@ class MenuView(arcade.View):
         if symbol == arcade.key.ENTER:
             print('start Entered')
             gstate.on_event("start_new_game")
+        
+        if symbol == arcade.key.ESCAPE:
+            print('exiting menu')
+            gstate.on_event("quit_game")
+
+        
 
     def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
         super().on_mouse_press(x, y, button, modifiers)
@@ -242,7 +248,6 @@ class LevelView(arcade.View):
         self.viewport_bottom = 0
 
         # Set up the empty sprite lists
-        self.enemies_list = arcade.SpriteList()
         self.all_sprites = arcade.SpriteList()
         
         # texts
@@ -278,18 +283,19 @@ class LevelView(arcade.View):
         arcade.draw_circle_filled(900, 1100, 35, arcade.color.YELLOW_ORANGE)
         # draw the map
         self.lvl.draw()
-        # draw player and other actors
-        self.all_sprites.draw(filter = GL_LINEAR)
+        # draw player
+        self.all_sprites.draw(filter=GL_LINEAR)
         
     def on_update(self, delta_time: float = 1/60) -> None:
         self.all_sprites.on_update(delta_time)
+        self.lvl.on_update(delta_time)
         self.physics_engine.update()
         
         # check if we win
         if (self.lvl.full_size_width - 120) < self.player.center_x:
             if gstate:
                 # else the next view is shifted too, should find a better fix
-                arcade.set_viewport(0.0, self.SCREEN_WIDTH, 0.0, self.SCREEN_HEIGHT)    
+                arcade.set_viewport(0.0, self.SCREEN_WIDTH, 0.0, self.SCREEN_HEIGHT)
                 gstate.on_event("start_next_level")
                 self.won_level = True
 
@@ -298,6 +304,12 @@ class LevelView(arcade.View):
         for boxes in colliding_boxes:
             boxes.remove_from_sprite_lists()
             self.boxes_found += 1
+
+        # check for enemy collision
+        colliding_enemies = arcade.check_for_collision_with_list(self.player, self.lvl.enemies_list)
+        for enemy in colliding_enemies:
+            enemy.remove_from_sprite_lists()
+            print("Gotcha!")
 
         # viewport scrolling
         changed = False
@@ -323,7 +335,14 @@ class LevelView(arcade.View):
     def on_key_press(self, symbol: int, modifiers: int) -> None:
 
         if symbol == arcade.key.ESCAPE:
+            # else the next view is shifted too, should find a better fix
+            arcade.set_viewport(0.0, self.SCREEN_WIDTH, 0.0, self.SCREEN_HEIGHT)
             gstate.on_event("back_to_menu")
+        
+        if symbol == arcade.key.P:
+            # pause the game
+            pause = PauseView(self.SCREEN_WIDTH, self.SCREEN_HEIGHT, game_view=self)
+            self.window.show_view(pause)
 
         if symbol == arcade.key.SPACE:
             if self.physics_engine.can_jump():
@@ -347,7 +366,7 @@ class LevelView(arcade.View):
             self.player.move_right(True)
             # TODO: do not allow moving through right map boundary
 
-        if symbol == arcade.key.P:
+        if symbol == arcade.key.PRINT:
             image = arcade.get_image()
             image.save("screenshot.png", "PNG")
 
@@ -365,15 +384,56 @@ class LevelView(arcade.View):
             self.player.move_right(False)
 
 
+class PauseView(arcade.View):
+    """Class to shows a semi transparent pause screen during game."""
+
+    def __init__(self, width: int, height: int, game_view: arcade.View) -> None:
+        super().__init__()
+        self.SCREEN_WIDTH = width
+        self.SCREEN_HEIGHT = height
+        # reference to the underlying view
+        self.game_view = game_view
+
+        # a semitransparent color for the overlay
+        self.fill_color = arcade.make_transparent_color(
+            arcade.color.WHITE, transparency=150
+        )
+
+    def on_draw(self):
+        # draw the paused game in the background
+        self.game_view.on_draw()
+        arcade.draw_lrtb_rectangle_filled(self.game_view.viewport_left,
+                                        self.game_view.viewport_left + self.SCREEN_WIDTH,
+                                        self.game_view.viewport_bottom + self.SCREEN_HEIGHT,
+                                        self.game_view.viewport_bottom,
+                                        self.fill_color
+        )
+        arcade.draw_text("-=PAUSED=-\n\nP TO CONTINUE\nESC TO EXIT",
+                        self.game_view.viewport_left + self.SCREEN_WIDTH/2 - 200,
+                        self.game_view.viewport_bottom + self.SCREEN_HEIGHT/2 - 100,
+                        arcade.color.DARK_GREEN,
+                        font_size=40,
+                        align="center"
+        )
+
+    def on_key_press(self, symbol: int, modifiers: int) -> None:
+        # resume the game when the user presses ESC again
+        if symbol == arcade.key.P:
+            self.window.show_view(self.game_view)
+
+        if symbol == arcade.key.ESCAPE:
+            # else the next view is shifted too, should find a better fix
+            arcade.set_viewport(0.0, self.SCREEN_WIDTH, 0.0, self.SCREEN_HEIGHT)
+            gstate.on_event("back_to_menu")
+
+        
+
 if __name__ == "__main__":
     # app entry point
-    TITLE = "Plfrmr 0.1"
+    TITLE = "Plfrmr 0.2"
     WIDTH = 1680
     HEIGHT = 1000
     window = arcade.Window(WIDTH, HEIGHT, TITLE)
-    #mainview = MenuView(WIDTH, HEIGHT)
     gstate = GameStateHandler(WIDTH, HEIGHT, window)
-    #gstate.actual_state = mainview
     gstate.on_event("start_app")
-    #window.show_view(mainview)
     arcade.run()
