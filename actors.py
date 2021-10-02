@@ -41,11 +41,6 @@ class MainActor(AnimatedWalkingSprite):
         self.texture = walking_right[0]
         self._set_scale(SCALE)
         self.update_animation()
-        #self.state = FACE_LEFT
-
-    #def update(self) -> None:
-    #    """Update its movement, state, etc."""
-    #    super().update()
 
     def on_update(self, delta_time: float = 1/60) -> None:
         self.update_animation(delta_time)
