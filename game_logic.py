@@ -1,6 +1,5 @@
 from typing import Any, Optional
 
-class GameLogic
-{
-    
-}
+class GameLogic:
+    def __init__(self) -> None:
+        pass

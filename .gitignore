@@ -1,4 +1,5 @@
 # no assets in git, yet
+.venv/*
 assets/_collection/*
 __pycache__/actors.cpython-38.pyc
 __pycache__/actors.cpython-39.pyc
@@ -9,3 +10,4 @@ __pycache__/main_window.cpython-39.pyc
 .vscode/settings.json
 assets/maps/grounds.tsx
 workspace.code-workspace
+test.py

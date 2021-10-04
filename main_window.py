@@ -6,6 +6,7 @@
 import pymunk
 from typing import Optional
 import arcade
+import arcade.gui
 from arcade.arcade_types import Point
 #from pyglet.gl import GL_NEAREST
 from pyglet.gl import GL_LINEAR
@@ -72,30 +73,43 @@ class MenuView(arcade.View):
     def __init__(self, width, height):
         super().__init__()
         self.SCREEN_WIDTH = width
-        self.SCREEN_HEIGHT = height
+        self.SCREEN_HEIGHT = height        
         arcade.set_background_color(arcade.color.LIGHT_MOSS_GREEN)
         self.bkg_image = arcade.load_texture("assets/backgrounds/bkg_4-rock.png")
-        self.menu_start = arcade.draw_text("ST.RT",
-                        self.SCREEN_WIDTH/2-50,
-                        self.SCREEN_HEIGHT/2+250,
-                        arcade.color.BLACK,
-                        font_size=40,
-                        bold=True,
-                        align="center")
-        self.menu_info = arcade.draw_text("INFO",
-                        self.SCREEN_WIDTH/2-50,
-                        self.SCREEN_HEIGHT/2+150,
-                        arcade.color.BLACK,
-                        font_size=40,
-                        bold=True,
-                        align="center")
-        self.menu_quit = arcade.draw_text("qUIT",
-                        self.SCREEN_WIDTH/2-50,
-                        self.SCREEN_HEIGHT/2+50,
-                        arcade.color.BLACK,
-                        font_size=40,
-                        bold=True,
-                        align="center")
+
+        self.gui_manager = arcade.gui.UIManager()
+        self.gui_manager.enable()
+
+        self.v_box = arcade.gui.UIBoxLayout()
+
+        menu_start = arcade.gui.UIFlatButton(text="ST.RT", width=200)
+        self.v_box.add(menu_start.with_space_around(bottom=30))
+        @menu_start.event("on_click")
+        def on_click_start(event):
+            print('start clicked')
+            gstate.on_event("start_new_game")
+
+        menu_info = arcade.gui.UIFlatButton(text="INFO", width=200)
+        self.v_box.add(menu_info.with_space_around(bottom=30))
+        @menu_info.event("on_click")
+        def on_click_info(event):
+            print('info clicked')
+            gstate.on_event("show_info")
+
+        menu_quit = arcade.gui.UIFlatButton(text="qUIT", width=200)
+        self.v_box.add(menu_quit)
+        @menu_quit.event("on_click")
+        def on_click_quit(event):
+            print('quit clicked')
+            gstate.on_event("quit_game")
+
+        self.gui_manager.add(
+            arcade.gui.UIAnchorWidget(
+                anchor_x="center_x",
+                anchor_y="center_y",
+                child=self.v_box
+            )
+        )
 
     def on_draw(self):
         arcade.start_render()
@@ -106,32 +120,15 @@ class MenuView(arcade.View):
             self.SCREEN_HEIGHT,
             self.bkg_image
         )
-        self.menu_start.draw()
-        self.menu_info.draw()
-        self.menu_quit.draw()
+        self.gui_manager.draw()
 
     def on_key_press(self, symbol: int, modifiers: int):
         super().on_key_press(symbol, modifiers)
         if symbol == arcade.key.ENTER:
             print('start Entered')
             gstate.on_event("start_new_game")
-        
         if symbol == arcade.key.ESCAPE:
             print('exiting menu')
-            gstate.on_event("quit_game")
-
-        
-
-    def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
-        super().on_mouse_press(x, y, button, modifiers)
-        if self.menu_start.collides_with_point((x,y)):
-            print('start clicked')
-            gstate.on_event("start_new_game")
-        if self.menu_info.collides_with_point((x,y)):
-            print('info clicked')
-            gstate.on_event("show_info")
-        if self.menu_quit.collides_with_point((x,y)):
-            print('quit clicked')
             gstate.on_event("quit_game")
 
 
@@ -145,23 +142,32 @@ class InfoView(arcade.View):
         self.SCREEN_WIDTH = width
         self.SCREEN_HEIGHT = height
         self.bkg_image = arcade.load_texture("assets/backgrounds/bkg_4-rock.png")
-        self.info_str = "Collect boxes\n and reach the end of the map.\n" + \
-                        "Move with [←,→]\n and jump with [space]\n" + \
+        self.info_str = "Collect boxes and reach the end of the map.\n" + \
+                        "Move with [←,→] and jump with [space].\n" + \
                         "Climb with [↑,↓] if you must."
-        self.info = arcade.draw_text(self.info_str,
-                        self.SCREEN_WIDTH/12,
-                        self.SCREEN_HEIGHT/10,
-                        arcade.color.BLACK,
-                        font_size=30,
-                        bold=True,
-                        align="center")
-        self.back = arcade.draw_text("BACK",
-                        self.SCREEN_WIDTH-150,
-                        50,
-                        arcade.color.BLACK,
-                        font_size=40,
-                        bold=True,
-                        align="center")
+
+        self.gui_manager = arcade.gui.UIManager()
+        self.gui_manager.enable()
+
+        info = arcade.gui.UITextArea(self.SCREEN_WIDTH/2-500,   # TODO: should change to UILabel or something with more options
+                                    self.SCREEN_HEIGHT/2-250,
+                                    width=800,
+                                    height=500,
+                                    text=self.info_str,
+                                    font_size=40,
+                                    bold=True,
+                                    color=arcade.color.WHITE_SMOKE)
+        
+        back_button = arcade.gui.UIFlatButton(self.SCREEN_WIDTH-150,
+                                                    80,
+                                                    text='Back')
+        @back_button.event("on_click")
+        def on_click_back(event):
+            print('back clicked')
+            gstate.on_event("back_to_menu")
+
+        self.gui_manager.add(info)
+        self.gui_manager.add(back_button)
 
     def on_draw(self):
         arcade.start_render()
@@ -172,14 +178,11 @@ class InfoView(arcade.View):
             self.SCREEN_HEIGHT,
             self.bkg_image
         )
-        self.info.draw()
-        self.back.draw()
+        self.gui_manager.draw()
 
-    def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
-        super().on_mouse_press(x, y, button, modifiers)
-        if self.back.collides_with_point((x,y)) and gstate:
-            print('back clicked')
-            gstate.on_event("back_to_menu")
+    #def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
+    #    super().on_mouse_press(x, y, button, modifiers)
+    #    if self.back.collides_with_point((x,y)) and gstate:
 
 
 class ScoreboardView(arcade.View):
