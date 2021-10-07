@@ -113,12 +113,12 @@
  "nextobjectid":15,
  "orientation":"orthogonal",
  "renderorder":"right-up",
- "tiledversion":"1.6.0",
+ "tiledversion":"1.7.2",
  "tileheight":16,
  "tilesets":[
         {
          "firstgid":1,
-         "source":"terrains.tsx"
+         "source":"terrains.json"
         }],
  "tilewidth":16,
  "type":"map",

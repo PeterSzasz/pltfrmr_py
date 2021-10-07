@@ -8,8 +8,7 @@ from typing import Optional
 import arcade
 import arcade.gui
 from arcade.arcade_types import Point
-#from pyglet.gl import GL_NEAREST
-from pyglet.gl import GL_LINEAR
+from pyglet.gl import GL_LINEAR, GL_NEAREST
 import actors
 from level_loader import MapLoader
 
@@ -157,16 +156,14 @@ class InfoView(arcade.View):
                                     font_size=40,
                                     bold=True,
                                     color=arcade.color.WHITE_SMOKE)
+        self.gui_manager.add(info)
         
-        back_button = arcade.gui.UIFlatButton(self.SCREEN_WIDTH-150,
-                                                    80,
-                                                    text='Back')
+        back_button = arcade.gui.UIFlatButton(self.SCREEN_WIDTH-150,80,text='Back')
         @back_button.event("on_click")
         def on_click_back(event):
             print('back clicked')
             gstate.on_event("back_to_menu")
 
-        self.gui_manager.add(info)
         self.gui_manager.add(back_button)
 
     def on_draw(self):
@@ -180,9 +177,11 @@ class InfoView(arcade.View):
         )
         self.gui_manager.draw()
 
-    #def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
-    #    super().on_mouse_press(x, y, button, modifiers)
-    #    if self.back.collides_with_point((x,y)) and gstate:
+    def on_key_press(self, symbol: int, modifiers: int):
+        super().on_key_press(symbol, modifiers)
+        if symbol == arcade.key.ENTER or symbol == arcade.key.ESCAPE:
+            print('back clicked')
+            gstate.on_event("back_to_menu")
 
 
 class ScoreboardView(arcade.View):
@@ -191,20 +190,28 @@ class ScoreboardView(arcade.View):
         self.SCREEN_WIDTH = width
         self.SCREEN_HEIGHT = height
         self.bkg_image = arcade.load_texture("assets/backgrounds/bkg_4-rock.png")
-        self.info = arcade.draw_text(f"Score: {gstate.actual_level + gstate.lives_left}",
-                                        self.SCREEN_WIDTH/2-50,
-                                        50,
-                                        arcade.color.BLACK,
-                                        font_size=40,
-                                        bold=True,
-                                        align="center")
-        self.back = arcade.draw_text("BACK",
-                                        self.SCREEN_WIDTH-150,
-                                        50,
-                                        arcade.color.BLACK,
-                                        font_size=40,
-                                        bold=True,
-                                        align="center")
+        self.info_str = f"Score: {gstate.actual_level + gstate.lives_left}"
+        
+        self.gui_manager = arcade.gui.UIManager()
+        self.gui_manager.enable()
+
+        info = arcade.gui.UITextArea(self.SCREEN_WIDTH/2-100,   # TODO: should change to UILabel or something with more options
+                                    self.SCREEN_HEIGHT/2+50,
+                                    width=400,
+                                    height=500,
+                                    text=self.info_str,
+                                    font_size=40,
+                                    bold=True,
+                                    color=arcade.color.WHITE_SMOKE)
+        self.gui_manager.add(info)
+        
+        back_button = arcade.gui.UIFlatButton(self.SCREEN_WIDTH-150,80,text='BACK')
+        @back_button.event("on_click")
+        def on_click_back(event):
+            print('back clicked')
+            gstate.on_event("back_to_menu")
+
+        self.gui_manager.add(back_button)
 
     def on_draw(self):
         super().on_draw()
@@ -216,12 +223,12 @@ class ScoreboardView(arcade.View):
             self.SCREEN_HEIGHT,
             self.bkg_image
         )
-        self.info.draw()
-        self.back.draw()
+        self.gui_manager.draw()
 
-    def on_mouse_press(self, x: float, y: float, button: int, modifiers: int):
-        super().on_mouse_press(x, y, button, modifiers)
-        if self.back.collides_with_point((x,y)) and gstate:
+    def on_key_press(self, symbol: int, modifiers: int):
+        super().on_key_press(symbol, modifiers)
+        if symbol == arcade.key.ENTER or symbol == arcade.key.ESCAPE:
+            print('back clicked')
             gstate.on_event("back_to_menu")
 
 
@@ -263,7 +270,7 @@ class LevelView(arcade.View):
         self.all_sprites.append(self.player)
 
         # map
-        self.lvl = MapLoader(f"assets/maps/map_{level_no}.tmx")
+        self.lvl = MapLoader(f"assets/maps/map_{level_no}.json")
         print(level_no)
  
         # no. of boxes
@@ -272,9 +279,9 @@ class LevelView(arcade.View):
 
         # turn on physics engine
         self.physics_engine = arcade.PhysicsEnginePlatformer(self.player, 
-                                                            self.lvl.walls_list, 
+                                                            self.lvl.scene.get_sprite_list("walls"), 
                                                             self.lvl.MAP_GRAVITY, 
-                                                            self.lvl.ladders_list)
+                                                            self.lvl.scene.get_sprite_list("ladders"))
 
     def on_draw(self) -> None:
         arcade.start_render()
@@ -287,7 +294,7 @@ class LevelView(arcade.View):
         # draw the map
         self.lvl.draw()
         # draw player
-        self.all_sprites.draw(filter=GL_LINEAR)
+        self.all_sprites.draw(filter=GL_NEAREST)
         
     def on_update(self, delta_time: float = 1/60) -> None:
         self.all_sprites.on_update(delta_time)
@@ -303,7 +310,7 @@ class LevelView(arcade.View):
                 self.won_level = True
 
         # check for collision
-        colliding_boxes = arcade.check_for_collision_with_list(self.player, self.lvl.boxes_list)
+        colliding_boxes = arcade.check_for_collision_with_list(self.player, self.lvl.scene.get_sprite_list("boxes"))
         for boxes in colliding_boxes:
             boxes.remove_from_sprite_lists()
             self.boxes_found += 1
@@ -438,5 +445,6 @@ if __name__ == "__main__":
     HEIGHT = 1000
     window = arcade.Window(WIDTH, HEIGHT, TITLE)
     gstate = GameStateHandler(WIDTH, HEIGHT, window)
-    gstate.on_event("start_app")
+    #gstate.on_event("start_app")
+    gstate.on_event("start_next_level")
     arcade.run()

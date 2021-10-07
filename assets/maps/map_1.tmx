@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.5" tiledversion="1.6.0" orientation="orthogonal" renderorder="right-up" width="128" height="32" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="15">
- <tileset firstgid="1" source="terrains.tsx"/>
+<map version="1.5" tiledversion="1.7.2" orientation="orthogonal" renderorder="right-up" width="128" height="32" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="15">
+ <editorsettings>
+  <export target="map_1.json" format="json"/>
+ </editorsettings>
+ <tileset firstgid="1" source="terrains.json"/>
  <layer id="3" name="background" width="128" height="32" opacity="0.6">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,

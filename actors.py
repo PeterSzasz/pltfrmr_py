@@ -44,7 +44,6 @@ class MainActor(AnimatedWalkingSprite):
 
     def on_update(self, delta_time: float = 1/60) -> None:
         self.update_animation(delta_time)
-        #print(self.state)
         return super().on_update(delta_time=delta_time)
 
     def jump(self):
