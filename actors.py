@@ -46,6 +46,10 @@ class MainActor(AnimatedWalkingSprite):
         self.update_animation(delta_time)
         return super().on_update(delta_time=delta_time)
 
+    def stop(self):
+        self.change_x = 0
+        self.change_y = 0
+        
     def jump(self):
         self.change_y = self.JUMP_SPEED * SCALE * 0.7 # to compensate scale
 
