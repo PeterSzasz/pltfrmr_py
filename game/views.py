@@ -22,8 +22,13 @@ class MenuView(View):
         menu_start = arcade.gui.UIFlatButton(text="ST.RT", width=200)
         menu_info = arcade.gui.UIFlatButton(text="INFO", width=200)
         menu_quit = arcade.gui.UIFlatButton(text="qUIT", width=200)
+        player_right = self.window.player.walk_right_textures[0]
+        player_left = self.window.player.walk_left_textures[0]
+        player_back = self.window.player.walk_up_textures[0]
+        player_icon = arcade.gui.UITextureButton(100,100,50,50,player_right, player_left, player_back)
 
         self.v_box = arcade.gui.UIBoxLayout()
+        self.v_box.add(player_icon)
         self.v_box.add(menu_start.with_space_around(bottom=30))
         self.v_box.add(menu_info.with_space_around(bottom=30))
         self.v_box.add(menu_quit)
