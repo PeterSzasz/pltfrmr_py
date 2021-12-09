@@ -2,7 +2,9 @@
 
 from arcade import Window, run
 from game.views import MenuView
-import game_logic
+from game.logic import GameLogic
+from game.logger import MovementLogger
+from actors import MainActor
 
 class MainWindow(Window):
     def __init__(self):
@@ -11,8 +13,10 @@ class MainWindow(Window):
         height = 1000
         super().__init__(width=width, height=height, title=title)
         self.center_window()
+        self.player = MainActor()
         self.show_view(MenuView(self))
-        self.logic = game_logic.GameLogic()
+        self.logic = GameLogic()
+        self.movement_logger = MovementLogger()
 
 
 if __name__ == "__main__":

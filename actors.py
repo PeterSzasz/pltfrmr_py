@@ -7,8 +7,10 @@ SCALE = 2.0
 class MainActor(AnimatedWalkingSprite):
     """The player character."""
 
-    def __init__(self) -> None:
+    def __init__(self, input_subject=None) -> None:
         super().__init__()
+        if input_subject:   # for this observer
+            input_subject.push_handlers(self)
         self.char_img = "assets/characters/forest_characters.png"
         self.VERTICAL_SPEED = 1
         self.HORIZONTAL_SPEED = 3
@@ -20,6 +22,15 @@ class MainActor(AnimatedWalkingSprite):
         self.left = 100
         # sound business
         self.player_jump_snd = load_sound(":resources:sounds/jump5.wav")
+
+    def reset_player(self):
+        # character start position
+        self.bottom = 100
+        self.left = 100
+        self.texture = self.walk_right_textures[0]
+
+    def setup_subject(self, input_subject):
+        input_subject.push_handlers(self)
 
     def load_textures(self) -> None:
         
