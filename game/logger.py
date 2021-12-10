@@ -26,10 +26,10 @@ class MovementLogger:
         if self.logging:
             tmp = {"event": "end_level", "param": None, "time": timestamp}
             self.movement_log.append(tmp)
+            with open("movement.json", 'w') as logfile:
+                json.dump(self.movement_log, logfile, indent=2)
         print(f"end level: {timestamp}")
         print(self.movement_log)
-        with open("movement.json", 'w') as logfile:
-            json.dump(self.movement_log, logfile, indent=2)
 
     def jump(self):
         timestamp = time.time()-self.start_time
