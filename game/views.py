@@ -210,7 +210,7 @@ class LevelView(View, EventDispatcher):
             self.window.movement_logger.logging = False
             self.window.movement_logger.setup_subject(self.replayer)
             self.replayer.set_observer(self.player)
-            self.replayer.start_play()
+            self.replayer.start_play(filename="movement.json")
 
         if symbol == arcade.key.P:
             # pause the game

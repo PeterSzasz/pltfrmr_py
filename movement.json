@@ -1,0 +1,57 @@
+[
+  {
+    "event": "move_right",
+    "param": true,
+    "time": 0.5123686790466309
+  },
+  {
+    "event": "jump",
+    "param": null,
+    "time": 2.865788459777832
+  },
+  {
+    "event": "move_right",
+    "param": false,
+    "time": 3.5526347160339355
+  },
+  {
+    "event": "move_left",
+    "param": true,
+    "time": 3.833432197570801
+  },
+  {
+    "event": "jump",
+    "param": null,
+    "time": 3.984610080718994
+  },
+  {
+    "event": "move_left",
+    "param": false,
+    "time": 4.7444868087768555
+  },
+  {
+    "event": "move_right",
+    "param": true,
+    "time": 4.888709306716919
+  },
+  {
+    "event": "jump",
+    "param": null,
+    "time": 7.168432712554932
+  },
+  {
+    "event": "jump",
+    "param": null,
+    "time": 7.81662917137146
+  },
+  {
+    "event": "move_right",
+    "param": false,
+    "time": 9.200623035430908
+  },
+  {
+    "event": "end_level",
+    "param": null,
+    "time": 12.368587493896484
+  }
+]

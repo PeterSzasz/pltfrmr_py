@@ -1,6 +1,6 @@
 # re-plays a previously logged 
 
-import time
+import time, json
 from pyglet.event import EventDispatcher
 
 class LogReplay(EventDispatcher):
@@ -12,37 +12,28 @@ class LogReplay(EventDispatcher):
     def set_observer(self, player):
         player.setup_subject(self)
 
-    def start_play(self):
+    def start_play(self, filename=None):
+        if filename:
+            with open(filename, 'r') as logfile:
+                self.log = json.load(logfile)
         self.log_pos = 0
         self.start_time = time.time()
 
     def next_move(self):
         if self.start_time:
             delay = time.time() - self.start_time
-            if self.log[self.log_pos][1] < delay:
-                movement = self.log[self.log_pos][0]
-                if movement == "jump":
-                    self.dispatch_event('jump')
-                if movement == "move_right True":
-                    self.dispatch_event('move_right',True)
-                if movement == "move_right False":
-                    self.dispatch_event('move_right',False)
-                if movement == "move_left True":
-                    self.dispatch_event('move_left',True)
-                if movement == "move_left False":
-                    self.dispatch_event('move_left',False)
-                if movement == "move_up True":
-                    self.dispatch_event('move_up',True)
-                if movement == "move_up False":
-                    self.dispatch_event('move_up',False)
-                if movement == "move_down True":
-                    self.dispatch_event('move_down',True)
-                if movement == "move_down False":
-                    self.dispatch_event('move_down',False)
+            if self.log[self.log_pos]["time"] < delay:
+                movement = self.log[self.log_pos]["event"]
+                param = self.log[self.log_pos]["param"]
+
                 if movement == "end_level":
                     print("playback end")
                     self.start_time = None
                 else:
+                    if param is not None:
+                        self.dispatch_event(movement, param)
+                    else:
+                        self.dispatch_event(movement)
                     self.log_pos += 1
 
 
