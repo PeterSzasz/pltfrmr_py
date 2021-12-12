@@ -130,10 +130,39 @@ class LevelView(View, EventDispatcher):
         self.won_level = False
 
         # turn on physics engine
-        self.physics_engine = arcade.PhysicsEnginePlatformer(self.player, 
-                                                            self.lvl.scene.get_sprite_list("walls"), 
-                                                            self.lvl.MAP_GRAVITY, 
-                                                            self.lvl.scene.get_sprite_list("ladders"))
+        # Gravity
+        GRAVITY = 1500
+        # Damping - Amount of speed lost per second
+        DEFAULT_DAMPING = 1.0
+        # Friction between objects
+        WALL_FRICTION = 0.7
+        DYNAMIC_ITEM_FRICTION = 0.6
+
+        # Default value is 1.0 if not specified.
+        damping = DEFAULT_DAMPING
+
+        # Set the gravity. (0, 0) is good for outer space and top-down.
+        gravity = (0, -GRAVITY)
+
+        # Create the physics engine
+        self.physics_engine = arcade.PymunkPhysicsEngine(damping=damping,
+                                                         gravity=gravity)
+        self.physics_engine.add_sprite(self.player,
+                                        friction=self.player.FRICTION,
+                                        mass=self.player.MASS,
+                                        moment_of_intertia=arcade.PymunkPhysicsEngine.MOMENT_INF,
+                                        damping=self.player.DAMPING,
+                                        collision_type="player",
+                                        max_horizontal_velocity=self.player.MAX_H_SPEED,
+                                        max_vertical_velocity=self.player.MAX_V_SPEED)
+        self.physics_engine.add_sprite_list(self.lvl.scene.get_sprite_list("walls"),
+                                            friction=WALL_FRICTION,
+                                            collision_type="wall",
+                                            body_type=arcade.PymunkPhysicsEngine.STATIC)
+        # self.physics_engine = arcade.PhysicsEnginePlatformer(self.player, 
+        #                                                     self.lvl.scene.get_sprite_list("walls"), 
+        #                                                     self.lvl.MAP_GRAVITY, 
+        #                                                     self.lvl.scene.get_sprite_list("ladders"))
         self.dispatch_event('start_level')
 
     def on_draw(self) -> None:
@@ -152,7 +181,9 @@ class LevelView(View, EventDispatcher):
     def on_update(self, delta_time: float = 1/60) -> None:
         self.all_sprites.on_update(delta_time)
         self.lvl.on_update(delta_time)
-        self.physics_engine.update()
+        force = (self.player.change_x*1000, self.player.change_y*200)
+        self.physics_engine.apply_force(self.player,force)
+        self.physics_engine.step()
         
         self.replayer.next_move()
 
@@ -218,7 +249,8 @@ class LevelView(View, EventDispatcher):
             self.window.show_view(PauseView(self.window, game_view=self))
 
         if symbol == arcade.key.SPACE:
-            if self.physics_engine.can_jump():
+            if self.physics_engine.is_on_ground(self.player) \
+                    and not self.player.on_ladder:
                 self.dispatch_event('jump')
             else:
                 self.dispatch_event('move_up',True)

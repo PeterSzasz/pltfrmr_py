@@ -16,21 +16,25 @@ class MapLoader():
 
         layer_options = {
             "background": {
-                "use_spatial_hash": True,
+                "use_spatial_hash": True
             },
             "walls": {
-                "use_spatial_hash": True,
+                "use_spatial_hash": True
             },
             "ladders": {
-                "use_spatial_hash": True,
+                "use_spatial_hash": True
+            },
+            "boxes": {
+                "use_spatial_hash": False
+            },
+            "moving_platforms": {
+                "use_spatial_hash": False
             }
         }   # other layers: boxes, moving_platforms
 
         self.tile_map = tilemap.tilemap.load_tilemap(map_file, SCALE, layer_options)
         self.scene = Scene.from_tilemap(self.tile_map)
 
-        #for platform in self.platforms_list:
-        #    self.walls_list.append(platform)
         self.full_size_width = (self.tile_map.width - 1) * \
             self.tile_map.tile_width * \
             SCALE
