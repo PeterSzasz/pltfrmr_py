@@ -1,5 +1,6 @@
 # views for menu, game, scores, etc
 
+import XInput
 import arcade
 import arcade.gui
 from arcade.arcade_types import Point
@@ -15,7 +16,7 @@ class MenuView(View):
     """
     def __init__(self, window):
         super().__init__(window)
-        
+    
         arcade.set_background_color(arcade.color.LIGHT_MOSS_GREEN)
         self.bkg_image = arcade.load_texture("assets/backgrounds/bkg_4-rock.png")
 
@@ -80,6 +81,13 @@ class MenuView(View):
             print('exiting menu')
             self.window.on_close()
 
+    def on_update(self, delta_time: float):
+        xinput_status = XInput.get_button_values(XInput.get_state(0))
+        if xinput_status['A']:
+            self.window.show_view(LevelView(self.window, level_no=1))
+        if xinput_status['Y']:
+            self.window.on_close()
+
 
 class LevelView(View, EventDispatcher):
     """
@@ -129,7 +137,6 @@ class LevelView(View, EventDispatcher):
         self.BOXES = 5
         self.won_level = False
 
-        # turn on physics engine
         # Gravity
         GRAVITY = 1500
         # Damping - Amount of speed lost per second
@@ -137,13 +144,10 @@ class LevelView(View, EventDispatcher):
         # Friction between objects
         WALL_FRICTION = 0.7
         DYNAMIC_ITEM_FRICTION = 0.6
-
         # Default value is 1.0 if not specified.
         damping = DEFAULT_DAMPING
-
         # Set the gravity. (0, 0) is good for outer space and top-down.
         gravity = (0, -GRAVITY)
-
         # Create the physics engine
         self.physics_engine = arcade.PymunkPhysicsEngine(damping=damping,
                                                          gravity=gravity)
@@ -181,6 +185,34 @@ class LevelView(View, EventDispatcher):
     def on_update(self, delta_time: float = 1/60) -> None:
         self.all_sprites.on_update(delta_time)
         self.lvl.on_update(delta_time)
+
+        for xinput_event in XInput.get_events():
+            if xinput_event.user_index == 0:
+                if xinput_event.type == XInput.EVENT_BUTTON_PRESSED:
+                    if xinput_event.button_id == 4096:
+                        if self.physics_engine.is_on_ground(self.player) \
+                                and not self.player.on_ladder:
+                            self.dispatch_event('jump')
+                    if xinput_event.button_id == 1:
+                        self.dispatch_event('move_up',True)
+                    if xinput_event.button_id == 2:
+                        self.dispatch_event('move_down',True)
+                    if xinput_event.button_id == 4:
+                        self.dispatch_event('move_left',True)
+                    if xinput_event.button_id == 8:
+                        self.dispatch_event('move_right',True)
+                if xinput_event.type == XInput.EVENT_BUTTON_RELEASED:
+                    if xinput_event.button_id == 4096:
+                        self.player.stop()
+                    if xinput_event.button_id == 1:
+                        self.dispatch_event('move_up',False)
+                    if xinput_event.button_id == 2:
+                        self.dispatch_event('move_down',False)
+                    if xinput_event.button_id == 4:
+                        self.dispatch_event('move_left',False)
+                    if xinput_event.button_id == 8:
+                        self.dispatch_event('move_right',False)
+
         force = (self.player.change_x*1000, self.player.change_y*200)
         self.physics_engine.apply_force(self.player,force)
         self.physics_engine.step()
@@ -193,7 +225,10 @@ class LevelView(View, EventDispatcher):
                 arcade.set_viewport(0.0, self.window.width, 0.0, self.window.height)
                 #gstate.on_event("start_next_level")
                 self.dispatch_event('end_level')
-                self.window.show_view(LevelView(self.window,self.window.logic.next_level()))
+                if self.window.logic.is_next_level():
+                    self.window.show_view(LevelView(self.window,self.window.logic.next_level()))
+                else:
+                    self.window.show_view(ScoreboardView())
                 self.won_level = True
 
         # check for collision

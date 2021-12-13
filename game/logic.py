@@ -7,6 +7,11 @@ class GameLogic:
         self.health = 100
         self.lives_left = 3
 
+    def is_next_level(self):
+        if self.actual_level + 1 >= self.max_level:
+            return False
+        return True
+        
     def next_level(self):
         self.actual_level += 1
         return self.actual_level
