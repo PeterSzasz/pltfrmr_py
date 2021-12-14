@@ -1,14 +1,14 @@
 # pltfrmr in python
 A simple platformer game in python arcade and pymunk.
 
-![alt text](screenshot.png)
-
 Features:
 - mostly arcade lib, patterns used in game dev.
-- pixel ![graphics](from https://opengameart.org/), simple control
+- pixel ![graphics](https://opengameart.org/), simple control
 - physics based gameplay with pymunk
 - maps created in ![Tiled](https://www.mapeditor.org/)
 - can record and replay movement (to/from file or on the fly)
+
+![alt text](screenshot.png)
 
 TODOs:
 - more and more pyglet, less n less arcade
