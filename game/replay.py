@@ -27,7 +27,6 @@ class LogReplay(EventDispatcher):
                 param = self.log[self.log_pos]["param"]
 
                 if movement == "end_level":
-                    print("playback end")
                     self.start_time = None
                 else:
                     if param is not None:

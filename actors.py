@@ -11,6 +11,7 @@ class MainActor(AnimatedWalkingSprite):
         super().__init__()
         if input_subject:   # for this observer
             input_subject.push_handlers(self)
+        self.player_jump_snd = load_sound(":resources:sounds/jump5.wav")
         self.char_img = "assets/characters/forest_characters.png"
         self.VERTICAL_SPEED = 1
         self.HORIZONTAL_SPEED = 3
@@ -21,15 +22,11 @@ class MainActor(AnimatedWalkingSprite):
         self.MAX_H_SPEED = 450
         self.MAX_V_SPEED = 1600
         self.on_ladder = False
-        # load textures
         self.load_textures()
-        # character start position
         self.reset_player()
-        # sound business
-        self.player_jump_snd = load_sound(":resources:sounds/jump5.wav")
 
     def reset_player(self):
-        # character start position
+        '''reset character to start position'''
         self.bottom = 250
         self.left = 100
         self.texture = self.walk_right_textures[0]

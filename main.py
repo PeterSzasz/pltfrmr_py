@@ -1,24 +1,21 @@
 # main file of a platformer
 
 from arcade import Window, run
-from game.views import MenuView
+from game.states import BaseState, MainMenu
 from game.logic import GameLogic
-from game.logger import MovementLogger
 from actors import MainActor
 
-class MainWindow(Window):
-    def __init__(self):
-        title = "Pltfrmr 0.2"
-        width = 1680
-        height = 1000
-        super().__init__(width=width, height=height, title=title)
-        self.center_window()
-        self.player = MainActor()
-        self.show_view(MenuView(self))
-        self.logic = GameLogic()
-        self.movement_logger = MovementLogger()
-
-
 if __name__ == "__main__":
-    MainWindow()
+    title = "Pltfrmr 0.4"
+    width = 1680
+    height = 1000
+    window = Window(width=width,
+                    height=height,
+                    title=title,
+                    fullscreen=False,
+                    antialiasing=False,
+                    center_window=True)
+    player = MainActor()
+    game_logic = GameLogic()
+    BaseState(window, game_logic, player).set_next_state(MainMenu())
     run()

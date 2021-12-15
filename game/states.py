@@ -8,37 +8,59 @@ from arcade import View
 from pyglet.gl import GL_LINEAR, GL_NEAREST
 from pyglet.event import EventDispatcher
 from level_loader import MapLoader
+from game.logger import MovementLogger
 from game.replay import LogReplay
 
-class MenuView(View):
-    """
-    Manages the menu.
-    """
-    def __init__(self, window):
+class BaseState(View):
+    def __init__(self, window, game_logic, player):
         super().__init__(window)
-    
+        self.game_logic = game_logic
+        self.player = player
         arcade.set_background_color(arcade.color.LIGHT_MOSS_GREEN)
         self.bkg_image = arcade.load_texture("assets/backgrounds/bkg_4-rock.png")
 
-        menu_start = arcade.gui.UIFlatButton(text="ST.RT", width=200)
-        menu_info = arcade.gui.UIFlatButton(text="INFO", width=200)
-        menu_quit = arcade.gui.UIFlatButton(text="qUIT", width=200)
-        player_right = self.window.player.walk_right_textures[0]
-        player_left = self.window.player.walk_left_textures[0]
-        player_back = self.window.player.walk_up_textures[0]
+    def setup(self):
+        '''A place for setting up dynamic stuff. After initialization.'''
+        pass
+
+    def set_next_state(self, state: 'BaseState'):
+        if state.window is None:
+            state.window = self.window
+        if state.game_logic is None:
+            state.game_logic = self.game_logic
+        if state.player is None:
+            state.player = self.player
+        state.setup()
+        self.window.show_view(state)
+        
+
+class MainMenu(BaseState):
+    """
+    Manages the menu.
+    """
+    def __init__(self, window=None, game_logic=None, player=None):
+        super().__init__(window, game_logic, player)    
+        self.menu_start = arcade.gui.UIFlatButton(text="ST.RT", width=200)
+        self.menu_info = arcade.gui.UIFlatButton(text="INFO", width=200)
+        self.menu_quit = arcade.gui.UIFlatButton(text="qUIT", width=200)
+        self.v_box = arcade.gui.UIBoxLayout()
+        self.gui_manager = arcade.gui.UIManager()
+
+    def setup(self):
+        player_right = self.player.walk_right_textures[0]
+        player_left = self.player.walk_left_textures[0]
+        player_back = self.player.walk_up_textures[0]
         player_icon = arcade.gui.UITextureButton(100,100,50,50,player_right, player_left, player_back)
 
-        self.v_box = arcade.gui.UIBoxLayout()
         self.v_box.add(player_icon)
-        self.v_box.add(menu_start.with_space_around(bottom=30))
-        self.v_box.add(menu_info.with_space_around(bottom=30))
-        self.v_box.add(menu_quit)
+        self.v_box.add(self.menu_start.with_space_around(bottom=30))
+        self.v_box.add(self.menu_info.with_space_around(bottom=30))
+        self.v_box.add(self.menu_quit)
 
-        menu_start.on_click = self.on_click_start
-        menu_info.on_click = self.on_click_info
-        menu_quit.on_click = self.on_click_quit
+        self.menu_start.on_click = self.on_click_start
+        self.menu_info.on_click = self.on_click_info
+        self.menu_quit.on_click = self.on_click_quit
 
-        self.gui_manager = arcade.gui.UIManager()
         self.gui_manager.enable()
         self.gui_manager.add(
             arcade.gui.UIAnchorWidget(
@@ -49,17 +71,13 @@ class MenuView(View):
         )
 
     def on_click_info(self, event):
-        print('info clicked')
-        self.window.show_view(InfoView(self.window))
+        self.set_next_state(Info(cat='rules'))
 
     def on_click_quit(self, event):
-        print('quit clicked')
-        #self.window.show_view(QuitPopup)
         self.window.on_close()
 
     def on_click_start(self, event):
-        print('start clicked')
-        self.window.show_view(LevelView(self.window, level_no=1))
+        self.set_next_state(Gameplay(player=self.player,level_no=1))
 
     def on_draw(self):
         arcade.start_render()
@@ -75,80 +93,73 @@ class MenuView(View):
     def on_key_press(self, symbol: int, modifiers: int):
         super().on_key_press(symbol, modifiers)
         if symbol == arcade.key.ENTER:
-            print('start hit')
-            self.window.show_view(LevelView(self.window, level_no=1))
+            self.set_next_state(Gameplay(player=self.player,level_no=1))
         if symbol == arcade.key.ESCAPE:
-            print('exiting menu')
             self.window.on_close()
 
     def on_update(self, delta_time: float):
-        xinput_status = XInput.get_button_values(XInput.get_state(0))
-        if xinput_status['A']:
-            self.window.show_view(LevelView(self.window, level_no=1))
-        if xinput_status['Y']:
-            self.window.on_close()
+        if any(XInput.get_connected()):
+            xinput_status = XInput.get_button_values(XInput.get_state(0))
+            if xinput_status['A']:
+                self.set_next_state(Gameplay(player=self.player,level_no=1))
+            if xinput_status['Y']:
+                self.window.on_close()
 
 
-class LevelView(View, EventDispatcher):
+class Gameplay(BaseState, EventDispatcher):
     """
     Manages the main gameplay area.
     """
-    def __init__(self, window, level_no: int = 1):
-        super().__init__(window)
-        self.initial_setup(level_no)
-
-    def initial_setup(self, level_no: int = 1) -> None:
-        """Initializes a level. Handles keyb input. Renders."""
-
-        # set background color
-        arcade.set_background_color(arcade.color.LIGHT_MOSS_GREEN)
-
-        # viewport settings
+    def __init__(self, window=None, game_logic=None, player=None, level_no: int = 1):
+        super().__init__(window, game_logic, player)
+        # Viewport settings
         self.LEFT_VIEW_MARGIN = 200
         self.RIGHT_VIEW_MARGIN = 300
         self.BOTTOM_VIEW_MARGIN = 50
         self.TOP_VIEW_MARGIN = 50
         self.viewport_left = 0
         self.viewport_bottom = 0
+        # Texts
+        self.static_text = "Alderaan VI"
+        self.dinamy_text = "Score: "
+        self.boxes_found = 0
+        # Boxes
+        self.BOXES = 5
+        self.won_level = False
+        # Gravity
+        self.GRAVITY = 1500
+        # Damping - Amount of speed lost per second
+        self.DEFAULT_DAMPING = 1.0
+        # Friction between objects
+        self.WALL_FRICTION = 0.7
+        self.DYNAMIC_ITEM_FRICTION = 0.6
+        # setup dynamic assets
+        self.setup(level_no)
+
+    def setup(self, level_no: int = 1) -> None:
+        """Initializes a level. Handles keyb input. Renders."""
 
         # Set up the empty sprite lists
         self.all_sprites = arcade.SpriteList()
         
-        # texts
-        self.static_text = "Alderaan VI"
-        self.dinamy_text = "Score: "
-        self.boxes_found = 0
-
-        # add player
-        self.player = self.window.player
+        # set player
         self.player.reset_player()
         self.player.setup_subject(self)
         self.all_sprites.append(self.player)
 
         # add logger and replayer
-        self.window.movement_logger.setup_subject(self)
-        self.window.movement_logger.logging = True
-        self.replayer = LogReplay(self.window.movement_logger)
+        self.movement_logger = MovementLogger(self)
+        self.movement_logger.logging = True
+        self.replayer = LogReplay(self.movement_logger)
 
         # map
         self.lvl = MapLoader(f"assets/maps/map_{level_no}.json")
  
-        # no. of boxes
-        self.BOXES = 5
-        self.won_level = False
-
-        # Gravity
-        GRAVITY = 1500
-        # Damping - Amount of speed lost per second
-        DEFAULT_DAMPING = 1.0
-        # Friction between objects
-        WALL_FRICTION = 0.7
-        DYNAMIC_ITEM_FRICTION = 0.6
-        # Default value is 1.0 if not specified.
-        damping = DEFAULT_DAMPING
-        # Set the gravity. (0, 0) is good for outer space and top-down.
-        gravity = (0, -GRAVITY)
         # Create the physics engine
+        # Default value is 1.0 if not specified.
+        damping = self.DEFAULT_DAMPING
+        # Set the gravity. (0, 0) is good for outer space and top-down.
+        gravity = (0, -self.GRAVITY)
         self.physics_engine = arcade.PymunkPhysicsEngine(damping=damping,
                                                          gravity=gravity)
         self.physics_engine.add_sprite(self.player,
@@ -160,13 +171,9 @@ class LevelView(View, EventDispatcher):
                                         max_horizontal_velocity=self.player.MAX_H_SPEED,
                                         max_vertical_velocity=self.player.MAX_V_SPEED)
         self.physics_engine.add_sprite_list(self.lvl.scene.get_sprite_list("walls"),
-                                            friction=WALL_FRICTION,
+                                            friction=self.WALL_FRICTION,
                                             collision_type="wall",
                                             body_type=arcade.PymunkPhysicsEngine.STATIC)
-        # self.physics_engine = arcade.PhysicsEnginePlatformer(self.player, 
-        #                                                     self.lvl.scene.get_sprite_list("walls"), 
-        #                                                     self.lvl.MAP_GRAVITY, 
-        #                                                     self.lvl.scene.get_sprite_list("ladders"))
         self.dispatch_event('start_level')
 
     def on_draw(self) -> None:
@@ -186,6 +193,7 @@ class LevelView(View, EventDispatcher):
         self.all_sprites.on_update(delta_time)
         self.lvl.on_update(delta_time)
 
+        # quick controller handling
         for xinput_event in XInput.get_events():
             if xinput_event.user_index == 0:
                 if xinput_event.type == XInput.EVENT_BUTTON_PRESSED:
@@ -223,12 +231,11 @@ class LevelView(View, EventDispatcher):
         if (self.lvl.full_size_width - 120) < self.player.center_x and self.window:
                 # else the next view is shifted too, should find a better fix
                 arcade.set_viewport(0.0, self.window.width, 0.0, self.window.height)
-                #gstate.on_event("start_next_level")
                 self.dispatch_event('end_level')
-                if self.window.logic.is_next_level():
-                    self.window.show_view(LevelView(self.window,self.window.logic.next_level()))
+                if self.game_logic.is_next_level():
+                    self.set_next_state(Gameplay(player=self.player, level_no=self.game_logic.next_level()))
                 else:
-                    self.window.show_view(ScoreboardView())
+                    self.set_next_state(Info(cat='scores'))
                 self.won_level = True
 
         # check for collision
@@ -241,7 +248,6 @@ class LevelView(View, EventDispatcher):
         colliding_enemies = arcade.check_for_collision_with_list(self.player, self.lvl.enemies_list)
         for enemy in colliding_enemies:
             enemy.remove_from_sprite_lists()
-            print("Gotcha!")
 
         # viewport scrolling
         changed = False
@@ -268,20 +274,20 @@ class LevelView(View, EventDispatcher):
 
         if symbol == arcade.key.ESCAPE:
             # else the next view is shifted too, should find a better fix
-            self.dispatch_event('end_level')
             arcade.set_viewport(0.0, self.window.width, 0.0, self.window.height)
-            self.window.show_view(MenuView(self.window))   #("back_to_menu")
+            self.dispatch_event('end_level')
+            self.set_next_state(MainMenu(player=self.player))
         
         if symbol == arcade.key.R:
-            self.window.movement_logger.logging = False
-            self.window.movement_logger.setup_subject(self.replayer)
+            self.movement_logger.logging = False
+            self.movement_logger.setup_subject(self.replayer)
             self.replayer.set_observer(self.player)
             self.replayer.start_play(filename="movement.json")
 
         if symbol == arcade.key.P:
             # pause the game
-            self.player.stop()  #TODO:replace this w something
-            self.window.show_view(PauseView(self.window, game_view=self))
+            self.player.stop()  #TODO:replace this w something sensible
+            self.set_next_state(Paused(game_view=self))
 
         if symbol == arcade.key.SPACE:
             if self.physics_engine.is_on_ground(self.player) \
@@ -298,11 +304,9 @@ class LevelView(View, EventDispatcher):
 
         if symbol == arcade.key.LEFT:
             self.dispatch_event('move_left',True)
-            # TODO: do not allow moving through left map boundary
 
         if symbol == arcade.key.RIGHT:
             self.dispatch_event('move_right',True)
-            # TODO: do not allow moving through right map boundary
 
         if symbol == arcade.key.PRINT:
             image = arcade.get_image()
@@ -321,25 +325,32 @@ class LevelView(View, EventDispatcher):
         if symbol == arcade.key.RIGHT:
             self.dispatch_event('move_right',False)
 
-LevelView.register_event_type('move_right')
-LevelView.register_event_type('move_left')
-LevelView.register_event_type('move_up')
-LevelView.register_event_type('move_down')
-LevelView.register_event_type('jump')
-LevelView.register_event_type('start_level')
-LevelView.register_event_type('end_level')
+Gameplay.register_event_type('move_right')
+Gameplay.register_event_type('move_left')
+Gameplay.register_event_type('move_up')
+Gameplay.register_event_type('move_down')
+Gameplay.register_event_type('jump')
+Gameplay.register_event_type('start_level')
+Gameplay.register_event_type('end_level')
 
-class InfoView(View):
+class Info(BaseState):
     """
     Manages the info screen.
     """
-    def __init__(self, window, info_str=None):
-        super().__init__(window)
-        self.bkg_image = arcade.load_texture("assets/backgrounds/bkg_4-rock.png")
-        if info_str is None:
-            info_str = "Collect boxes and reach the end of the map.\n" + \
-                            "Move with [←,→] and jump with [space].\n" + \
-                            "Climb with [↑,↓] if you must."
+    def __init__(self, window=None, game_logic=None, player=None, cat=None):
+        super().__init__(window, game_logic, player)
+        self.cat = cat
+
+    def setup(self):
+        if self.cat == 'rules':
+            info_str =  "Collect boxes and reach the end of the map.\n" + \
+                        "Move with [←,→] and jump with [space].\n" + \
+                        "Climb with [↑,↓] if you must."
+        elif self.cat == 'scores':
+            info_str = f"Score: {self.game_logic.actual_level + self.game_logic.lives_left}"
+        else:
+            info_str = "No information about this. google it."
+
         info = arcade.gui.UITextArea(self.window.width/2-500,   # TODO: should change to UILabel or something with more options
                                     self.window.height/2-250,
                                     width=800,
@@ -356,8 +367,7 @@ class InfoView(View):
         self.gui_manager.add(back_button)
 
     def on_click_back(self, event):
-        print('back clicked')
-        self.window.show_view(MenuView(self.window))
+        self.set_next_state(MainMenu(player=self.player))
 
     def on_draw(self):
         arcade.start_render()
@@ -373,62 +383,14 @@ class InfoView(View):
     def on_key_press(self, symbol: int, modifiers: int):
         super().on_key_press(symbol, modifiers)
         if symbol == arcade.key.ENTER or symbol == arcade.key.ESCAPE:
-            print('enter/esc hit')
-            self.window.show_view(MenuView(self.window))
+            self.set_next_state(MainMenu(player=self.player))
 
 
-class ScoreboardView(View):
-    """
-    Manages the Score view.
-    """
-    def __init__(self, window, info_str=None):
-        super().__init__(window)
-        self.bkg_image = arcade.load_texture("assets/backgrounds/bkg_4-rock.png")
-        if info_str is None:
-            info_str = f"Score: {self.window.logic.actual_level + self.window.logic.lives_left}"
-        info = arcade.gui.UITextArea(self.window.width/2-100,   # TODO: should change to UILabel or something with more options
-                                    self.window.height/2+50,
-                                    width=400,
-                                    height=500,
-                                    text=info_str,
-                                    font_size=40,
-                                    bold=True,
-                                    color=arcade.color.WHITE_SMOKE)        
-        back_button = arcade.gui.UIFlatButton(self.width-150,80,text='BACK')
-        back_button.on_click = self.on_click_back
-        self.gui_manager = arcade.gui.UIManager()
-        self.gui_manager.enable()
-        self.gui_manager.add(info)
-        self.gui_manager.add(back_button)
-
-    def on_click_back(self, event):
-        print('back clicked')
-        self.window.show_view(MenuView(self.window))
-
-    def on_draw(self):
-        super().on_draw()
-        arcade.start_render()
-        arcade.draw_texture_rectangle(
-            self.window.width/2,
-            self.window.height/2,
-            self.window.width,
-            self.window.height,
-            self.bkg_image
-        )
-        self.gui_manager.draw()
-
-    def on_key_press(self, symbol: int, modifiers: int):
-        super().on_key_press(symbol, modifiers)
-        if symbol == arcade.key.ENTER or symbol == arcade.key.ESCAPE:
-            print('enter/esc hit')
-            self.window.show_view(MenuView(self.window))
-
-
-class PauseView(View):
+class Paused(BaseState):
     """Class to shows a semi transparent pause screen during game."""
 
-    def __init__(self, window, game_view: LevelView):
-        super().__init__(window)
+    def __init__(self, game_view: Gameplay, window=None, game_logic=None, player=None):
+        super().__init__(window, game_logic, player)
         # reference to the game's level view
         self.game_view = game_view
         # a semitransparent color for the overlay
@@ -462,9 +424,8 @@ class PauseView(View):
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         # resume the game when the user presses ESC again
         if symbol == arcade.key.P:
-            #self.window.show_view(self.game_view)
-            self.window.show_view(self.game_view)
+            self.set_next_state(self.game_view)
 
         if symbol == arcade.key.ESCAPE:
             arcade.set_viewport(0.0, self.window.width, 0.0, self.window.height)  # else the next view is shifted too, should find a better fix
-            self.window.show_view(MenuView(self.window))
+            self.set_next_state(MainMenu(player=self.player))
