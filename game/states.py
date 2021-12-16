@@ -41,8 +41,9 @@ class MainMenu(BaseState):
     def __init__(self, window=None, game_logic=None, player=None):
         super().__init__(window, game_logic, player)    
         self.menu_start = arcade.gui.UIFlatButton(text="ST.RT", width=200)
-        self.menu_info = arcade.gui.UIFlatButton(text="INFO", width=200)
-        self.menu_quit = arcade.gui.UIFlatButton(text="qUIT", width=200)
+        self.menu_conf = arcade.gui.UIFlatButton(text="CONF", width=200)
+        self.menu_info = arcade.gui.UIFlatButton(text="INFo", width=200)
+        self.menu_quit = arcade.gui.UIFlatButton(text="q.UIT", width=200)
         self.v_box = arcade.gui.UIBoxLayout()
         self.gui_manager = arcade.gui.UIManager()
 
@@ -54,10 +55,12 @@ class MainMenu(BaseState):
 
         self.v_box.add(player_icon)
         self.v_box.add(self.menu_start.with_space_around(bottom=30))
+        self.v_box.add(self.menu_conf.with_space_around(bottom=30))
         self.v_box.add(self.menu_info.with_space_around(bottom=30))
         self.v_box.add(self.menu_quit)
 
         self.menu_start.on_click = self.on_click_start
+        self.menu_conf.on_click = self.on_click_conf
         self.menu_info.on_click = self.on_click_info
         self.menu_quit.on_click = self.on_click_quit
 
@@ -69,6 +72,9 @@ class MainMenu(BaseState):
                 child=self.v_box
             )
         )
+
+    def on_click_conf(self, event):
+        self.set_next_state(Conf())
 
     def on_click_info(self, event):
         self.set_next_state(Info(cat='rules'))
@@ -333,6 +339,41 @@ Gameplay.register_event_type('jump')
 Gameplay.register_event_type('start_level')
 Gameplay.register_event_type('end_level')
 
+
+class Conf(BaseState):
+    """
+    Manages the configuration screen.
+    """
+    def __init__(self, window=None, game_logic=None, player=None):
+        super().__init__(window, game_logic, player)
+
+    def setup(self):
+        ''''''
+        back_button = arcade.gui.UIFlatButton(self.window.width-150,80,text='Back')
+        back_button.on_click = self.on_click_back
+        self.gui_manager = arcade.gui.UIManager()
+        self.gui_manager.enable()
+        self.gui_manager.add(back_button)
+
+    def on_click_back(self, event):
+        self.set_next_state(MainMenu())
+
+    def on_draw(self):
+        arcade.start_render()
+        arcade.draw_texture_rectangle(
+            self.window.width/2,
+            self.window.height/2,
+            self.window.width,
+            self.window.height,
+            self.bkg_image
+        )
+        self.gui_manager.draw()
+
+    def on_key_press(self, symbol: int, modifiers: int):
+        super().on_key_press(symbol, modifiers)
+        if symbol == arcade.key.ENTER or symbol == arcade.key.ESCAPE:
+            self.set_next_state(MainMenu(player=self.player))
+
 class Info(BaseState):
     """
     Manages the info screen.
@@ -367,7 +408,7 @@ class Info(BaseState):
         self.gui_manager.add(back_button)
 
     def on_click_back(self, event):
-        self.set_next_state(MainMenu(player=self.player))
+        self.set_next_state(MainMenu())
 
     def on_draw(self):
         arcade.start_render()
@@ -383,7 +424,7 @@ class Info(BaseState):
     def on_key_press(self, symbol: int, modifiers: int):
         super().on_key_press(symbol, modifiers)
         if symbol == arcade.key.ENTER or symbol == arcade.key.ESCAPE:
-            self.set_next_state(MainMenu(player=self.player))
+            self.set_next_state(MainMenu())
 
 
 class Paused(BaseState):
@@ -428,4 +469,4 @@ class Paused(BaseState):
 
         if symbol == arcade.key.ESCAPE:
             arcade.set_viewport(0.0, self.window.width, 0.0, self.window.height)  # else the next view is shifted too, should find a better fix
-            self.set_next_state(MainMenu(player=self.player))
+            self.set_next_state(MainMenu())
