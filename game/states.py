@@ -349,10 +349,24 @@ class Conf(BaseState):
 
     def setup(self):
         ''''''
+        label_col = arcade.gui.UIBoxLayout(0,0,vertical=True)
+        buttn_col = arcade.gui.UIBoxLayout(0,0,vertical=True)
+        options = {"control":"keyboard","optio2":"butt2","opt3":"butt3","option4":"butt3"}
+        for key,value in options.items():
+            label_col.add(arcade.gui.UILabel(x=0.0,y=20.0,width=100,height=50,font_size=20,
+                                             text=key,color=(22,22,22,255),bold=True))
+            buttn_col.add(arcade.gui.UIFlatButton(x=0.0,y=0.0,width=100,height=50,text=value))
+                        
+        box_layout = arcade.gui.UIBoxLayout(x=self.window.width/2-100,
+                                            y=self.window.height/2+200,
+                                            vertical=False,
+                                            children=[label_col,buttn_col])
+
         back_button = arcade.gui.UIFlatButton(self.window.width-150,80,text='Back')
         back_button.on_click = self.on_click_back
         self.gui_manager = arcade.gui.UIManager()
         self.gui_manager.enable()
+        self.gui_manager.add(box_layout)
         self.gui_manager.add(back_button)
 
     def on_click_back(self, event):
