@@ -1,3 +1,7 @@
+# game hero,enemies and other actors
+
+from typing import Tuple
+from arcade.gui import UILabel
 from arcade import AnimatedWalkingSprite, load_sound, load_texture, FACE_RIGHT
 from arcade.sprite import FACE_LEFT
 
@@ -97,6 +101,10 @@ class Enemy(AnimatedWalkingSprite):
         super().__init__(scale=SCALE, center_x=center_x, center_y=center_y)
         self.texture_file = "assets/characters/bloodSkeleton_character_sheet.png"
         self.load_textures()
+        self.damage = 0
+
+    def set_damage(self, damage=0):
+        self.damage = damage
 
     def load_textures(self):
         walking_right = [
@@ -123,6 +131,47 @@ class Enemy(AnimatedWalkingSprite):
         self._set_scale(SCALE)
         self.update_animation()
 
+    def draw(self, *, filter=None, pixelated=None, blend_function=None):
+        super().draw(filter=filter, pixelated=pixelated, blend_function=blend_function)
+        UILabel(10.0,self.height+5,text=str(self.damage))
+
     def on_update(self, delta_time: float = 1/60) -> None:
         self.update_animation(delta_time)
         super().on_update(delta_time=delta_time)
+
+class EnemyFactory():
+    def __init__(self) -> None:
+        self.level_mul = 0
+        self.no_enemies = 0
+        self.base_damage = 0
+
+    def get_enemy(self, pos: Tuple) -> Enemy:
+        if pos is not None:
+            new_enemy = Enemy(center_x=pos[0],center_y=pos[1])
+        else:
+            new_enemy = Enemy(0.0,0.0)
+        new_enemy.set_damage(self.base_damage)
+        return new_enemy
+
+class EasyEnemies(EnemyFactory):
+    def __init__(self) -> None:
+        super().__init__()
+        self.level_mul = 1
+        self.no_enemies = 3
+        self.base_damage = 3
+
+        
+class MediumEnemies(EnemyFactory):
+    def __init__(self) -> None:
+        super().__init__()
+        self.level_mul = 2
+        self.no_enemies = 5
+        self.base_damage = 5
+
+
+class HardEnemies(EnemyFactory):
+    def __init__(self) -> None:
+        super().__init__()
+        self.level_mul = 3
+        self.no_enemies = 6
+        self.base_damage = 7

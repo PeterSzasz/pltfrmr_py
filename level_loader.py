@@ -39,10 +39,7 @@ class MapLoader():
             self.tile_map.tile_width * \
             SCALE
         
-        # test enemy
         self.enemies_list = SpriteList()
-        self.enemy_no1 = Enemy(1500, 256)
-        self.enemies_list.append(self.enemy_no1)
 
     def on_update(self, delta_time=1/60):
         self.enemies_list.on_update(delta_time)

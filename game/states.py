@@ -7,6 +7,7 @@ from arcade.arcade_types import Point
 from arcade import View
 from pyglet.gl import GL_LINEAR, GL_NEAREST
 from pyglet.event import EventDispatcher
+from actors import EasyEnemies, MediumEnemies, HardEnemies
 from level_loader import MapLoader
 from game.logger import MovementLogger
 from game.replay import LogReplay
@@ -73,6 +74,9 @@ class MainMenu(BaseState):
             )
         )
 
+    def on_click_start(self, event):
+        self.set_next_state(Gameplay(player=self.player,game_logic=self.game_logic,level_no=1))
+
     def on_click_conf(self, event):
         self.set_next_state(Conf())
 
@@ -81,9 +85,6 @@ class MainMenu(BaseState):
 
     def on_click_quit(self, event):
         self.window.on_close()
-
-    def on_click_start(self, event):
-        self.set_next_state(Gameplay(player=self.player,level_no=1))
 
     def on_draw(self):
         arcade.start_render()
@@ -99,7 +100,7 @@ class MainMenu(BaseState):
     def on_key_press(self, symbol: int, modifiers: int):
         super().on_key_press(symbol, modifiers)
         if symbol == arcade.key.ENTER:
-            self.set_next_state(Gameplay(player=self.player,level_no=1))
+            self.set_next_state(Gameplay(level_no=1))
         if symbol == arcade.key.ESCAPE:
             self.window.on_close()
 
@@ -107,7 +108,7 @@ class MainMenu(BaseState):
         if any(XInput.get_connected()):
             xinput_status = XInput.get_button_values(XInput.get_state(0))
             if xinput_status['A']:
-                self.set_next_state(Gameplay(player=self.player,level_no=1))
+                self.set_next_state(Gameplay(level_no=1))
             if xinput_status['Y']:
                 self.window.on_close()
 
@@ -140,7 +141,7 @@ class Gameplay(BaseState, EventDispatcher):
         self.WALL_FRICTION = 0.7
         self.DYNAMIC_ITEM_FRICTION = 0.6
         # setup dynamic assets
-        self.setup(level_no)
+        #self.setup(level_no)
 
     def setup(self, level_no: int = 1) -> None:
         """Initializes a level. Handles keyb input. Renders."""
@@ -160,6 +161,14 @@ class Gameplay(BaseState, EventDispatcher):
 
         # map
         self.lvl = MapLoader(f"assets/maps/map_{level_no}.json")
+        # test enemy
+        if self.game_logic.difficulty == 1:
+            enemy_no1 = EasyEnemies().get_enemy((500,500))
+        if self.game_logic.difficulty == 2:
+            enemy_no1 = MediumEnemies().get_enemy((500,500))
+        if self.game_logic.difficulty == 3:
+            enemy_no1 = HardEnemies().get_enemy((500,500))
+        self.lvl.enemies_list.append(enemy_no1)
  
         # Create the physics engine
         # Default value is 1.0 if not specified.
@@ -340,6 +349,17 @@ Gameplay.register_event_type('start_level')
 Gameplay.register_event_type('end_level')
 
 
+class UIColoredLabel(arcade.gui.UILabel):
+    def __init__(self, x: float = 0, y: float = 0, width: float = None, height: float = None, text: str = "", font_name=('Arial',), font_size: float = 12, text_color: arcade.Color=(255, 255, 255, 255), bold=False, italic=False, stretch=False, anchor_x='left', anchor_y='baseline', align='left', dpi=None, multiline: bool = False, size_hint=None, size_hint_min=None, size_hint_max=None, style=None, bg_color=None, **kwargs):
+        super().__init__(x=x, y=y, width=width, height=height, text=text, font_name=font_name, font_size=font_size, text_color=text_color, bold=bold, italic=italic, stretch=stretch, anchor_x=anchor_x, anchor_y=anchor_y, align=align, dpi=dpi, multiline=multiline, size_hint=size_hint, size_hint_min=size_hint_min, size_hint_max=size_hint_max, style=style, **kwargs)
+        self.bg_color = bg_color
+        if not self.bg_color:
+            self.bg_color = (11,11,11,111)
+    
+    def do_render(self, surface: 'Surface'):
+        super().do_render(surface)
+        arcade.draw_xywh_rectangle_filled(0, 0, self.width, self.height, color=self.bg_color)
+
 class Conf(BaseState):
     """
     Manages the configuration screen.
@@ -353,9 +373,11 @@ class Conf(BaseState):
         buttn_col = arcade.gui.UIBoxLayout(0,0,vertical=True)
         options = {"control":"keyboard","optio2":"butt2","opt3":"butt3","option4":"butt3"}
         for key,value in options.items():
-            label_col.add(arcade.gui.UILabel(x=0.0,y=20.0,width=100,height=50,font_size=20,
-                                             text=key,color=(22,22,22,255),bold=True))
-            buttn_col.add(arcade.gui.UIFlatButton(x=0.0,y=0.0,width=100,height=50,text=value))
+            label_col.add(UIColoredLabel(x=0.0,y=20.0,width=100,height=50,font_size=20,
+                                             text=key,text_color=(155,44,155,255),bold=True,
+                                             font_name="Kenney Pixel"))
+            buttn_col.add(arcade.gui.UIFlatButton(x=0.0,y=0.0,width=100,height=50,
+                                                  text=value))
                         
         box_layout = arcade.gui.UIBoxLayout(x=self.window.width/2-100,
                                             y=self.window.height/2+200,

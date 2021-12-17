@@ -15,7 +15,7 @@ if __name__ == "__main__":
                     fullscreen=False,
                     antialiasing=False,
                     center_window=True)
-    player = MainActor()
     game_logic = GameLogic()
+    player = MainActor()
     BaseState(window, game_logic, player).set_next_state(MainMenu())
     run()
