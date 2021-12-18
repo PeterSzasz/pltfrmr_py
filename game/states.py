@@ -161,12 +161,12 @@ class Gameplay(BaseState, EventDispatcher):
         self.lvl = MapLoader(f"assets/maps/map_{level_no}.json")
         # test enemy
         if self.game_logic.difficulty == 1:
-            enemy_no1 = EasyEnemies().get_enemy((500,500))
+            enemies = EasyEnemies().get_enemy((500,500),self.game_logic.debug)
         if self.game_logic.difficulty == 2:
-            enemy_no1 = MediumEnemies().get_enemy((500,500))
+            enemies = MediumEnemies().get_enemy((500,500),self.game_logic.debug)
         if self.game_logic.difficulty == 3:
-            enemy_no1 = HardEnemies().get_enemy((500,500))
-        self.lvl.enemies_list.append(enemy_no1)
+            enemies = HardEnemies().get_enemy((500,500),self.game_logic.debug)
+        self.lvl.enemies_list.extend(enemies)
  
         # Create the physics engine
         # Default value is 1.0 if not specified.

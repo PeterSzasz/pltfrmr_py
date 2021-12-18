@@ -1,5 +1,6 @@
-# game hero,enemies and other actors
+# game hero,enemies and other actor
 
+from random import seed,randint,choice
 from typing import Tuple
 from arcade import AnimatedWalkingSprite, load_sound, load_texture, FACE_RIGHT
 from arcade.sprite import FACE_LEFT
@@ -96,32 +97,35 @@ class MainActor(AnimatedWalkingSprite):
 class Enemy(AnimatedWalkingSprite):
     """For enemies. Walking between two obstacles."""
 
-    def __init__(self, center_x: float, center_y: float):
+    def __init__(self, center_x: float, center_y: float, file_format: dict):
         super().__init__(scale=SCALE, center_x=center_x, center_y=center_y)
-        self.texture_file = "assets/characters/bloodSkeleton_character_sheet.png"
-        self.load_textures()
+        self.texture_file = "assets/characters/"+file_format["file"]
+        self.load_textures(w=file_format["width"],
+                           h=file_format["height"],
+                           f=file_format["frames"]
+                           )
         self.damage = 0
 
     def set_damage(self, damage=0):
         self.damage = damage
 
-    def load_textures(self):
+    def load_textures(self,w,h,f):
         walking_right = [
-            load_texture(self.texture_file, 32+frame, 0, 32, 64) for frame in range(0, 161, 32)
+            load_texture(self.texture_file, 0+frame, 0, w, h, flipped_horizontally=True) for frame in range(0, w*f, w)
         ]
         walking_left = [
-            load_texture(self.texture_file, 32+frame, 0, 32, 64, flipped_horizontally=True) for frame in range(0, 161, 32)
+            load_texture(self.texture_file, 0+frame, 0, w, h) for frame in range(0, w*f, w)
         ]
         self.stand_right_textures = [load_texture(self.texture_file,
                                                 0,
                                                 0,
-                                                32,
-                                                64)]
+                                                w,
+                                                h)]
         self.stand_left_textures = [load_texture(self.texture_file,
                                                 0,
                                                 0,
-                                                32,
-                                                64,
+                                                w,
+                                                h,
                                                 flipped_horizontally=True)]
         self.walk_right_textures = walking_right
         self.walk_left_textures = walking_left
@@ -143,14 +147,30 @@ class EnemyFactory():
         self.level_mul = 0
         self.no_enemies = 0
         self.base_damage = 0
+        self.enemies = [{"file":"bat_black.png","frames":5,"width":32,"height":32},
+                        {"file":"bat_brown.png","frames":5,"width":32,"height":32},
+                        {"file":"devil_red.png","frames":4,"width":32,"height":32},
+                        {"file":"skeleton_sword.png","frames":4,"width":32,"height":32}
+                       ]
 
-    def get_enemy(self, pos: Tuple) -> Enemy:
-        if pos is not None:
-            new_enemy = Enemy(center_x=pos[0],center_y=pos[1])
-        else:
-            new_enemy = Enemy(0.0,0.0)
-        new_enemy.set_damage(self.base_damage)
-        return new_enemy
+    def get_enemy(self, pos: Tuple, debug = False) -> list:
+        '''generates enemies, child classes determines the properties'''
+        if debug:
+            seed(17)    # random seed for debugging,testing
+        new_enemies = []
+        for _ in range(self.no_enemies):
+            if pos is not None:
+                x=randint(pos[0]-200,pos[0]+200)
+                y=randint(pos[0]-200,pos[0]+200)
+                file_format = choice(self.enemies)
+                print(file_format)
+                new_enemy = Enemy(center_x=x,center_y=y,file_format=file_format)
+                new_enemy.set_damage(self.base_damage)
+                new_enemies.append(new_enemy)
+            else:
+                new_enemy = Enemy(0.0,0.0)
+                new_enemies.append(new_enemy)
+        return new_enemies
 
 class EasyEnemies(EnemyFactory):
     def __init__(self) -> None:
