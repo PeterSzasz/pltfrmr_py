@@ -20,12 +20,18 @@ class MainActor(AnimatedWalkingSprite):
         self.VERTICAL_SPEED = 1
         self.HORIZONTAL_SPEED = 3
         self.JUMP_SPEED = 13
-        self.FRICTION = 1.0
-        self.DAMPING = 0.4
+        self.force = (0.0,0.0)
+        self.impulse = (0.0,0.0)
         self.MASS = 2.0
+        self.DAMPING = 0.4
+        self.FRICTION = 1.0
         self.MAX_H_SPEED = 450
         self.MAX_V_SPEED = 1600
+        self.MOVE_FORCE_GROUND = 6000
+        self.MOVE_FORCE_AIR = 800
+        self.JUMP_IMPULSE = 1300
         self.on_ladder = False
+        self.on_ground = True
         self.load_textures()
         self.reset_player()
 
@@ -68,7 +74,8 @@ class MainActor(AnimatedWalkingSprite):
         self.change_y = 0
         
     def jump(self):
-        self.change_y = self.JUMP_SPEED * SCALE * 0.7 # to compensate scale
+        if self.on_ground and not self.on_ladder:
+            self.impulse = (0.0, self.JUMP_IMPULSE)
 
     def move_up(self, moving):
         if moving:
@@ -82,17 +89,20 @@ class MainActor(AnimatedWalkingSprite):
         else:
             self.change_y = 0
 
+    def move_left(self, moving):
+        if moving:            
+            self.force = (-self.MOVE_FORCE_GROUND, 0)
+            self.FRICTION = 0.0
+        else:
+            self.force = (0.0,0.0)
+
     def move_right(self, moving):
         if moving:
-            self.change_x = self.HORIZONTAL_SPEED * SCALE
+            self.force = (self.MOVE_FORCE_GROUND, 0)
+            self.FRICTION = 1.0
         else:
-            self.change_x = 0
+            self.force = (0.0,0.0)
 
-    def move_left(self, moving):
-        if moving:
-            self.change_x = -self.HORIZONTAL_SPEED * SCALE
-        else:
-            self.change_x = 0
 
 class Enemy(AnimatedWalkingSprite):
     """For enemies. Walking between two obstacles."""
@@ -105,6 +115,7 @@ class Enemy(AnimatedWalkingSprite):
                            f=file_format["frames"]
                            )
         self.damage = 0
+        self.health = 10
 
     def set_damage(self, damage=0):
         self.damage = damage

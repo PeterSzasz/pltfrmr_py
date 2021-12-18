@@ -30,7 +30,7 @@ class MapLoader():
             "moving_platforms": {
                 "use_spatial_hash": False
             }
-        }   # other layers: boxes, moving_platforms
+        }
 
         self.tile_map = tilemap.tilemap.load_tilemap(map_file, SCALE, layer_options)
         self.scene = Scene.from_tilemap(self.tile_map)
@@ -57,10 +57,10 @@ class MapLoader():
             for enemy in self.enemies_list:
                 enemy.draw(pixelated=True)
                 enemy.draw_hit_box()
-                draw_text(  text=str(enemy.damage),
+                draw_text(  text=str(f"D:{enemy.damage} H:{enemy.health}"),
                             bold=True,
                             color=(255,255,255),
-                            start_x=enemy.center_x-5,
-                            start_y=enemy.center_y+enemy.height/2-15)
+                            start_x=enemy.center_x-15,
+                            start_y=enemy.center_y+enemy.height/2)
         else:
             self.enemies_list.draw(filter=GL_NEAREST)

@@ -154,7 +154,7 @@ class Gameplay(BaseState, EventDispatcher):
 
         # add logger and replayer
         self.movement_logger = MovementLogger(self)
-        self.movement_logger.logging = True
+        self.movement_logger.logging = False
         self.replayer = LogReplay(self.movement_logger)
 
         # map
@@ -190,9 +190,10 @@ class Gameplay(BaseState, EventDispatcher):
         self.dispatch_event('start_level')
 
     def on_draw(self) -> None:
+        '''iterates through everything that needs to appear for this level'''
         arcade.start_render()
         # texts
-        arcade.draw_text(self.static_text, 16, 190, arcade.color.LIGHT_BROWN, 48)
+        arcade.draw_text(self.static_text, 26, 190, arcade.color.LIGHT_BROWN, 48)
         text = self.dinamy_text + str(self.boxes_found) + " <" + str(self.BOXES) + ">"
         arcade.draw_text(text, 4 + self.viewport_left, self.window.height-34, arcade.color.LIGHT_BROWN, 24)
         # draw a sun
@@ -203,16 +204,20 @@ class Gameplay(BaseState, EventDispatcher):
         self.all_sprites.draw(filter=GL_NEAREST)
         
     def on_update(self, delta_time: float = 1/60) -> None:
+        '''handles physics and game logic updates, win conditions, etc'''
         self.all_sprites.on_update(delta_time)
         self.lvl.on_update(delta_time)
+        
+        # replay move, if started explicitly
+        self.replayer.next_move()
 
         # quick controller handling
         for xinput_event in XInput.get_events():
             if xinput_event.user_index == 0:
                 if xinput_event.type == XInput.EVENT_BUTTON_PRESSED:
-                    if xinput_event.button_id == 4096:
-                        if self.physics_engine.is_on_ground(self.player) \
-                                and not self.player.on_ladder:
+                    if xinput_event.button_id == 4096 and \
+                        self.physics_engine.is_on_ground(self.player) and \
+                        not self.player.on_ladder:
                             self.dispatch_event('jump')
                     if xinput_event.button_id == 1:
                         self.dispatch_event('move_up',True)
@@ -234,11 +239,13 @@ class Gameplay(BaseState, EventDispatcher):
                     if xinput_event.button_id == 8:
                         self.dispatch_event('move_right',False)
 
-        force = (self.player.change_x*1000, self.player.change_y*200)
-        self.physics_engine.apply_force(self.player,force)
+        # apply forces on player and calculate the physical aspect of the game
+        self.player.on_ground = self.physics_engine.is_on_ground(self.player)
+        self.physics_engine.apply_impulse(self.player, self.player.impulse)
+        self.player.impulse = (0.0,0.0)
+        self.physics_engine.apply_force(self.player, self.player.force)
+        self.physics_engine.set_friction(self.player, self.player.FRICTION)
         self.physics_engine.step()
-        
-        self.replayer.next_move()
 
         # check if we win
         if (self.lvl.full_size_width - 120) < self.player.center_x and self.window:
@@ -251,16 +258,26 @@ class Gameplay(BaseState, EventDispatcher):
                     self.set_next_state(Info(cat='scores'))
                 self.won_level = True
 
-        # check for collision
+        # collision 
+        # with boxes
         colliding_boxes = arcade.check_for_collision_with_list(self.player, self.lvl.scene.get_sprite_list("boxes"))
         for boxes in colliding_boxes:
             boxes.remove_from_sprite_lists()
             self.boxes_found += 1
-
-        # check for enemy collision
+        # with ladders
+        if arcade.check_for_collision_with_list(self.player, self.lvl.scene.get_sprite_list("ladders")):
+            if not self.player.on_ladder:
+                self.player.on_ladder = True
+        else:
+            if self.player.on_ladder:
+                self.player.on_ladder = False
+        # with enemies
         colliding_enemies = arcade.check_for_collision_with_list(self.player, self.lvl.enemies_list)
         for enemy in colliding_enemies:
-            enemy.remove_from_sprite_lists()
+            enemy.health -= 4
+            enemy.center_x = enemy.center_x-50
+            if enemy.health < 0:
+                enemy.remove_from_sprite_lists()
 
         # viewport scrolling
         changed = False
@@ -348,13 +365,14 @@ Gameplay.register_event_type('end_level')
 
 
 class UIColoredLabel(arcade.gui.UILabel):
-    def __init__(self, x: float = 0, y: float = 0, width: float = None, height: float = None, text: str = "", font_name=('Arial',), font_size: float = 12, text_color: arcade.Color=(255, 255, 255, 255), bold=False, italic=False, stretch=False, anchor_x='left', anchor_y='baseline', align='left', dpi=None, multiline: bool = False, size_hint=None, size_hint_min=None, size_hint_max=None, style=None, bg_color=None, **kwargs):
-        super().__init__(x=x, y=y, width=width, height=height, text=text, font_name=font_name, font_size=font_size, text_color=text_color, bold=bold, italic=italic, stretch=stretch, anchor_x=anchor_x, anchor_y=anchor_y, align=align, dpi=dpi, multiline=multiline, size_hint=size_hint, size_hint_min=size_hint_min, size_hint_max=size_hint_max, style=style, **kwargs)
+    #def __init__(self, x: float = 0, y: float = 0, width: float = None, height: float = None, text: str = "", font_name=('Arial',), font_size: float = 12, text_color: arcade.Color=(255, 255, 255, 255), bold=False, italic=False, stretch=False, anchor_x='left', anchor_y='baseline', align='left', dpi=None, multiline: bool = False, size_hint=None, size_hint_min=None, size_hint_max=None, style=None, bg_color=None, **kwargs):
+    def __init__(self, x: float = 0, y: float = 0, width: float = None, height: float = None, text: str = "", font_name=('Arial',), font_size: float = 12, text_color: arcade.Color=(255, 255, 255, 255), bold=False, bg_color=None, **kwargs):
+        super().__init__(x=x, y=y, width=width, height=height, text=text, font_name=font_name, font_size=font_size, text_color=text_color, bold=bold, **kwargs)
         self.bg_color = bg_color
         if not self.bg_color:
             self.bg_color = (255,255,255,128)
     
-    def do_render(self, surface: 'Surface'):
+    def do_render(self, surface):
         super().do_render(surface)
         arcade.draw_xywh_rectangle_filled(0, 0, self.width, self.height, color=self.bg_color)
 
@@ -367,11 +385,11 @@ class Conf(BaseState):
 
     def setup(self):
         ''''''
-        label_col = arcade.gui.UIBoxLayout(0,0,vertical=True)
+        label_col = arcade.gui.UIBoxLayout(0,0,vertical=True, align="bottom")
         buttn_col = arcade.gui.UIBoxLayout(0,0,vertical=True)
         options = self.game_logic.options
         for key,value in options.items():
-            label_col.add(UIColoredLabel(x=0.0,y=20.0,width=100,height=50,font_size=20,
+            label_col.add(UIColoredLabel(x=0.0,y=40.0,width=100,height=50,font_size=20,
                                          text=key,text_color=(155,44,155,255),bold=True,
                                          font_name="Kenney Pixel",bg_color=(11,11,11,111)))
             buttn_col.add(arcade.gui.UIFlatButton(x=0.0,y=0.0,width=100,height=50,
