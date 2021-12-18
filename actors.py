@@ -1,7 +1,6 @@
 # game hero,enemies and other actors
 
 from typing import Tuple
-from arcade.gui import UILabel
 from arcade import AnimatedWalkingSprite, load_sound, load_texture, FACE_RIGHT
 from arcade.sprite import FACE_LEFT
 
@@ -133,11 +132,11 @@ class Enemy(AnimatedWalkingSprite):
 
     def draw(self, *, filter=None, pixelated=None, blend_function=None):
         super().draw(filter=filter, pixelated=pixelated, blend_function=blend_function)
-        UILabel(10.0,self.height+5,text=str(self.damage))
 
     def on_update(self, delta_time: float = 1/60) -> None:
         self.update_animation(delta_time)
         super().on_update(delta_time=delta_time)
+
 
 class EnemyFactory():
     def __init__(self) -> None:

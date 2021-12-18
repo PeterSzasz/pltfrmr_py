@@ -6,7 +6,15 @@ class GameLogic:
         self.max_level = 2
         self.health = 100
         self.lives_left = 3
-        self.difficulty = 1 # 1:easy 2:medium 3:hard
+        self.min_diff = 1   # 1:easy 2:medium 3:hard
+        self.max_diff = 3
+        self.difficulty = self.min_diff
+        self.options = {"control":["keyboard","controller"],
+                        "difficulty":["easy","medium","hard"],
+                        "start level":["1","2","3"],
+                        "debug":["true","false"]
+                        }
+        self.debug = True
 
     def is_next_level(self):
         if self.actual_level + 1 > self.max_level:
@@ -16,6 +24,11 @@ class GameLogic:
     def next_level(self):
         self.actual_level += 1
         return self.actual_level
+
+    def shift_diffciulty(self):
+        self.difficulty += 1
+        if self.difficulty > self.max_diff:
+            self.difficulty = self.min_diff
 
     def harm(self, injury):
         self.health -= injury

@@ -49,7 +49,18 @@ class MapLoader():
             if walls_hit:
                 enemy.change_x *= -1
 
-
-    def draw(self) -> None:
+    def draw(self, debug) -> None:
         self.scene.draw(filter=GL_NEAREST)
-        self.enemies_list.draw(filter=GL_NEAREST)
+        if debug:
+            from arcade import draw_text
+            #self.scene.draw_hit_boxes()    # slow
+            for enemy in self.enemies_list:
+                enemy.draw(pixelated=True)
+                enemy.draw_hit_box()
+                draw_text(  text=str(enemy.damage),
+                            bold=True,
+                            color=(255,255,255),
+                            start_x=enemy.center_x-5,
+                            start_y=enemy.center_y+enemy.height/2-15)
+        else:
+            self.enemies_list.draw(filter=GL_NEAREST)

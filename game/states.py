@@ -140,8 +140,6 @@ class Gameplay(BaseState, EventDispatcher):
         # Friction between objects
         self.WALL_FRICTION = 0.7
         self.DYNAMIC_ITEM_FRICTION = 0.6
-        # setup dynamic assets
-        #self.setup(level_no)
 
     def setup(self, level_no: int = 1) -> None:
         """Initializes a level. Handles keyb input. Renders."""
@@ -200,7 +198,7 @@ class Gameplay(BaseState, EventDispatcher):
         # draw a sun
         arcade.draw_circle_filled(900, 1100, 35, arcade.color.YELLOW_ORANGE)
         # draw the map
-        self.lvl.draw()
+        self.lvl.draw(self.game_logic.debug)
         # draw player
         self.all_sprites.draw(filter=GL_NEAREST)
         
@@ -354,7 +352,7 @@ class UIColoredLabel(arcade.gui.UILabel):
         super().__init__(x=x, y=y, width=width, height=height, text=text, font_name=font_name, font_size=font_size, text_color=text_color, bold=bold, italic=italic, stretch=stretch, anchor_x=anchor_x, anchor_y=anchor_y, align=align, dpi=dpi, multiline=multiline, size_hint=size_hint, size_hint_min=size_hint_min, size_hint_max=size_hint_max, style=style, **kwargs)
         self.bg_color = bg_color
         if not self.bg_color:
-            self.bg_color = (11,11,11,111)
+            self.bg_color = (255,255,255,128)
     
     def do_render(self, surface: 'Surface'):
         super().do_render(surface)
@@ -371,13 +369,13 @@ class Conf(BaseState):
         ''''''
         label_col = arcade.gui.UIBoxLayout(0,0,vertical=True)
         buttn_col = arcade.gui.UIBoxLayout(0,0,vertical=True)
-        options = {"control":"keyboard","optio2":"butt2","opt3":"butt3","option4":"butt3"}
+        options = self.game_logic.options
         for key,value in options.items():
             label_col.add(UIColoredLabel(x=0.0,y=20.0,width=100,height=50,font_size=20,
-                                             text=key,text_color=(155,44,155,255),bold=True,
-                                             font_name="Kenney Pixel"))
+                                         text=key,text_color=(155,44,155,255),bold=True,
+                                         font_name="Kenney Pixel",bg_color=(11,11,11,111)))
             buttn_col.add(arcade.gui.UIFlatButton(x=0.0,y=0.0,width=100,height=50,
-                                                  text=value))
+                                                  text=value[0]))
                         
         box_layout = arcade.gui.UIBoxLayout(x=self.window.width/2-100,
                                             y=self.window.height/2+200,
