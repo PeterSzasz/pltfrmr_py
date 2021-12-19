@@ -19,7 +19,7 @@ class MovementLogger:
 
     def start_level(self):
         self.start_time = time.time()
-        print(f"start level: {self.start_time}")
+        print(f"start level: {self.start_time:.2f}")
 
     def end_level(self):
         timestamp = time.time()-self.start_time
@@ -28,15 +28,14 @@ class MovementLogger:
             self.movement_log.append(tmp)
             with open("movement.json", 'w') as logfile:
                 json.dump(self.movement_log, logfile, indent=2)
-        print(f"end level: {timestamp}")
-        print(self.movement_log)
+        print(f"end level: {timestamp:.2f}")
 
     def jump(self):
         timestamp = time.time()-self.start_time
         if self.logging:
             tmp = {"event": "jump", "param": None, "time": timestamp}
             self.movement_log.append(tmp)
-        print(f"Jump: {timestamp}")
+        print(f"Jump: {timestamp:.2f}")
 
     def move_up(self, moving):
         timestamp = time.time()-self.start_time
@@ -44,9 +43,9 @@ class MovementLogger:
             tmp = {"event": "move_up", "param": moving, "time": timestamp}
             self.movement_log.append(tmp)
         if moving:
-            print(f"UP true: {timestamp}")
+            print(f"UP true: {timestamp:.2f}")
         else:
-            print(f"UP false: {timestamp}")
+            print(f"UP false: {timestamp:.2f}")
 
     def move_down(self, moving):
         timestamp = time.time()-self.start_time
@@ -54,9 +53,9 @@ class MovementLogger:
             tmp = {"event": "move_down", "param": moving, "time": timestamp}
             self.movement_log.append(tmp)
         if moving:
-            print(f"DOWN true: {timestamp}")
+            print(f"DOWN true: {timestamp:.2f}")
         else:
-            print(f"DOWN false: {timestamp}")
+            print(f"DOWN false: {timestamp:.2f}")
 
     def move_right(self, moving):
         timestamp = time.time()-self.start_time
@@ -64,9 +63,9 @@ class MovementLogger:
             tmp = {"event": "move_right", "param": moving, "time": timestamp}
             self.movement_log.append(tmp)
         if moving:
-            print(f"RIGHT true: {timestamp}")
+            print(f"RIGHT true: {timestamp:.2f}")
         else:
-            print(f"RIGHT false: {timestamp}")
+            print(f"RIGHT false: {timestamp:.2f}")
 
     def move_left(self, moving):
         timestamp = time.time()-self.start_time
@@ -74,6 +73,6 @@ class MovementLogger:
             tmp = {"event": "move_left", "param": moving, "time": timestamp}
             self.movement_log.append(tmp)
         if moving:
-            print(f"LEFT true: {timestamp}")
+            print(f"LEFT true: {timestamp:.2f}")
         else:
-            print(f"LEFT false: {timestamp}")
+            print(f"LEFT false: {timestamp:.2f}")

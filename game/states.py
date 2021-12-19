@@ -19,6 +19,7 @@ class BaseState(View):
         self.player = player
         arcade.set_background_color(arcade.color.LIGHT_MOSS_GREEN)
         self.bkg_image = arcade.load_texture("assets/backgrounds/bkg_4-rock.png")
+        arcade.set_viewport(0.0, self.window.width, 0.0, self.window.height)
 
     def setup(self):
         '''A place for setting up dynamic stuff. After initialization.'''
@@ -250,7 +251,7 @@ class Gameplay(BaseState, EventDispatcher):
         # check if we win
         if (self.lvl.full_size_width - 120) < self.player.center_x and self.window:
                 # else the next view is shifted too, should find a better fix
-                arcade.set_viewport(0.0, self.window.width, 0.0, self.window.height)
+                #arcade.set_viewport(0.0, self.window.width, 0.0, self.window.height)
                 self.dispatch_event('end_level')
                 if self.game_logic.is_next_level():
                     self.set_next_state(Gameplay(player=self.player, level_no=self.game_logic.next_level()))
@@ -304,7 +305,7 @@ class Gameplay(BaseState, EventDispatcher):
 
         if symbol == arcade.key.ESCAPE:
             # else the next view is shifted too, should find a better fix
-            arcade.set_viewport(0.0, self.window.width, 0.0, self.window.height)
+            #arcade.set_viewport(0.0, self.window.width, 0.0, self.window.height)
             self.dispatch_event('end_level')
             self.set_next_state(MainMenu(player=self.player))
         
@@ -486,6 +487,10 @@ class Paused(BaseState):
         super().__init__(window, game_logic, player)
         # reference to the game's level view
         self.game_view = game_view
+        arcade.set_viewport(self.game_view.viewport_left, 
+                                self.window.width + self.game_view.viewport_left,
+                                self.game_view.viewport_bottom, 
+                                self.window.height + self.game_view.viewport_bottom)
         # a semitransparent color for the overlay
         self.fill_color = arcade.make_transparent_color(
             arcade.color.WHITE, transparency=150
@@ -517,7 +522,7 @@ class Paused(BaseState):
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         # resume the game when the user presses ESC again
         if symbol == arcade.key.P:
-            self.set_next_state(self.game_view)
+            self.window.show_view(self.game_view)
 
         if symbol == arcade.key.ESCAPE:
             arcade.set_viewport(0.0, self.window.width, 0.0, self.window.height)  # else the next view is shifted too, should find a better fix

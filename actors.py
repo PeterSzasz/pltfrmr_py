@@ -17,18 +17,16 @@ class MainActor(AnimatedWalkingSprite):
             input_subject.push_handlers(self)
         self.player_jump_snd = load_sound(":resources:sounds/jump5.wav")
         self.char_img = "assets/characters/forest_characters.png"
-        self.VERTICAL_SPEED = 1
-        self.HORIZONTAL_SPEED = 3
-        self.JUMP_SPEED = 13
         self.force = (0.0,0.0)
         self.impulse = (0.0,0.0)
         self.MASS = 2.0
-        self.DAMPING = 0.4
+        self.DAMPING = 0.2
         self.FRICTION = 1.0
         self.MAX_H_SPEED = 450
         self.MAX_V_SPEED = 1600
         self.MOVE_FORCE_GROUND = 6000
-        self.MOVE_FORCE_AIR = 800
+        self.MOVE_FORCE_AIR = 1800
+        self.MOVE_FORCE_LADDER = self.MOVE_FORCE_GROUND/1.55
         self.JUMP_IMPULSE = 1300
         self.on_ladder = False
         self.on_ground = True
@@ -38,7 +36,7 @@ class MainActor(AnimatedWalkingSprite):
     def reset_player(self):
         '''reset character to start position'''
         self.bottom = 250
-        self.left = 100
+        self.left = 110
         self.texture = self.walk_right_textures[0]
 
     def setup_subject(self, input_subject):
@@ -78,30 +76,59 @@ class MainActor(AnimatedWalkingSprite):
             self.impulse = (0.0, self.JUMP_IMPULSE)
 
     def move_up(self, moving):
-        if moving:
-            self.change_y = self.VERTICAL_SPEED * SCALE
+        if moving and self.on_ladder:
+            self.force = (0.0,self.MOVE_FORCE_LADDER)
         else:
-            self.change_y = 0
+            if self.on_ladder:
+                self.force = (0.0,self.MOVE_FORCE_LADDER/2)
+            else:
+                self.force = (0.0,0.0)
+        print(f"({self.force[0]:.2f},{self.force[1]:.2f})")
 
     def move_down(self, moving):
         if moving:
-            self.change_y = -self.VERTICAL_SPEED * SCALE
-        else:
-            self.change_y = 0
-
-    def move_left(self, moving):
-        if moving:            
-            self.force = (-self.MOVE_FORCE_GROUND, 0)
-            self.FRICTION = 0.0
+            self.force = (0.0,-self.MOVE_FORCE_GROUND)
         else:
             self.force = (0.0,0.0)
+        print(f"({self.force[0]:.2f},{self.force[1]:.2f})")
+
+    def move_left(self, moving):
+        if moving:     
+            if self.on_ground:       
+                self.force = (-self.MOVE_FORCE_GROUND, 0)
+                self.FRICTION = 0.0
+            elif self.on_ladder:
+                h_force = self.force[1]
+                self.force = (-self.MOVE_FORCE_LADDER,h_force)
+            else:
+                self.force = (-self.MOVE_FORCE_AIR, 0)
+        else:
+            if self.on_ladder and not self.on_ground:
+                h_force = self.force[1]
+                self.force = (0.0,h_force)
+            else:
+                self.force = (0.0,0.0)
+                self.FRICTION = 1.0
+        print(f"({self.force[0]:.2f},{self.force[1]:.2f})")
 
     def move_right(self, moving):
         if moving:
-            self.force = (self.MOVE_FORCE_GROUND, 0)
-            self.FRICTION = 1.0
+            if self.on_ground:      
+                self.force = (self.MOVE_FORCE_GROUND, 0)
+                self.FRICTION = 0.0
+            elif self.on_ladder:
+                h_force = self.force[1]
+                self.force = (self.MOVE_FORCE_LADDER,h_force)
+            else:
+                self.force = (self.MOVE_FORCE_AIR, 0)
         else:
-            self.force = (0.0,0.0)
+            if self.on_ladder and not self.on_ground:
+                h_force = self.force[1]
+                self.force = (0.0,h_force)
+            else:
+                self.force = (0.0,0.0)
+                self.FRICTION = 1.0
+        print(f"({self.force[0]:.2f},{self.force[1]:.2f})")
 
 
 class Enemy(AnimatedWalkingSprite):
