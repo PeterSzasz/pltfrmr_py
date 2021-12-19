@@ -2,7 +2,7 @@
 
 from random import seed,randint,choice
 from typing import Tuple
-from arcade import AnimatedWalkingSprite, load_sound, load_texture, FACE_RIGHT
+from arcade import AnimatedWalkingSprite, load_sound, load_texture
 from arcade.sprite import FACE_LEFT
 
 JUMPING = 5     # in continuation of FACE_UP, FACE_DOWN
@@ -17,6 +17,7 @@ class MainActor(AnimatedWalkingSprite):
             input_subject.push_handlers(self)
         self.player_jump_snd = load_sound(":resources:sounds/jump5.wav")
         self.char_img = "assets/characters/forest_characters.png"
+        self.cur_texture = 0
         self.force = (0.0,0.0)
         self.impulse = (0.0,0.0)
         self.MASS = 2.0
@@ -30,6 +31,9 @@ class MainActor(AnimatedWalkingSprite):
         self.JUMP_IMPULSE = 1300
         self.on_ladder = False
         self.on_ground = True
+        self.right_facing = True # faces right
+        self.x_odometer = 0.0
+        self.y_odometer = 0.0
         self.load_textures()
         self.reset_player()
 
@@ -44,24 +48,44 @@ class MainActor(AnimatedWalkingSprite):
 
     def load_textures(self) -> None:
         
-        walking_right = [
+        self.walk_right_textures = [
             load_texture(self.char_img, 0+frame, 0, 32, 32) for frame in range(0, 97, 32)
         ]
-        walking_left = [
+        self.walk_left_textures = [
             load_texture(self.char_img, 0+frame, 0, 32, 32, flipped_horizontally=True) for frame in range(0, 97, 32)
         ]
         climbing = [
             load_texture(self.char_img, 18*32+frame, 0, 32, 32) for frame in range(0, 97, 32)
         ]
-        self.stand_right_textures = [walking_right[0]]
-        self.stand_left_textures = [walking_left[0]]
-        self.walk_right_textures = walking_right
-        self.walk_left_textures = walking_left
+        self.stand_right_textures = [self.walk_right_textures[0]]
+        self.stand_left_textures = [self.walk_left_textures[0]]
         self.walk_up_textures = climbing
         self.walk_down_textures = climbing
-        self.texture = walking_right[0]
+        self.texture = self.walk_right_textures[self.cur_texture]
         self._set_scale(SCALE)
         self.update_animation()
+
+    def pymunk_moved(self, physics_engine, dx, dy, d_angle):
+        """ Handle being moved by the pymunk engine """
+        DEAD_ZONE = 0.1
+        if dx < -DEAD_ZONE and self.right_facing is True:
+            self.right_facing = False
+        elif dx > DEAD_ZONE and self.right_facing is False:
+            self.right_facing = True
+
+        # add how far we've moved
+        self.x_odometer += dx
+        self.y_odometer += dy
+
+        if abs(self.x_odometer) > 20:
+            self.x_odometer = 0
+            self.cur_texture += 1
+            if self.cur_texture >= len(self.walk_right_textures):
+                self.cur_texture = 0
+            if self.right_facing:
+                self.texture = self.walk_right_textures[self.cur_texture]
+            else:
+                self.texture = self.walk_left_textures[self.cur_texture]
 
     def on_update(self, delta_time: float = 1/60) -> None:
         self.update_animation(delta_time)
