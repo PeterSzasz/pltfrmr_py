@@ -31,7 +31,7 @@ class MainActor(AnimatedWalkingSprite):
         self.JUMP_IMPULSE = 1300
         self.on_ladder = False
         self.on_ground = True
-        self.right_facing = True # faces right
+        self.right_facing = True # is actor faces right
         self.x_odometer = 0.0
         self.y_odometer = 0.0
         self.load_textures()
@@ -88,7 +88,6 @@ class MainActor(AnimatedWalkingSprite):
                 self.texture = self.walk_left_textures[self.cur_texture]
 
     def on_update(self, delta_time: float = 1/60) -> None:
-        self.update_animation(delta_time)
         return super().on_update(delta_time=delta_time)
 
     def stop(self):
