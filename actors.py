@@ -17,6 +17,16 @@ class MainActor(AnimatedWalkingSprite):
             input_subject.push_handlers(self)
         self.player_jump_snd = load_sound(":resources:sounds/jump5.wav")
         self.char_img = "assets/characters/forest_characters.png"
+        self.idle_texture = [[]]*2
+        self.walk_textures = [[]]*2
+        self.squat_texture = [[]]*2
+        self.jump_upward_texture = [[]]*2
+        self.jump_downward_texture = [[]]*2
+        self.climbing_textures = [[]]*2
+        self.hit_textures = [[]]*2
+        self.slash_textures = [[]]*2
+        self.RIGHT = 0
+        self.LEFT = 1
         self.cur_texture = 0
         self.force = (0.0,0.0)
         self.impulse = (0.0,0.0)
@@ -31,7 +41,8 @@ class MainActor(AnimatedWalkingSprite):
         self.JUMP_IMPULSE = 1300
         self.on_ladder = False
         self.on_ground = True
-        self.right_facing = True # is actor faces right
+        self.squatting = False
+        self.facing_right = True
         self.x_odometer = 0.0
         self.y_odometer = 0.0
         self.load_textures()
@@ -41,60 +52,138 @@ class MainActor(AnimatedWalkingSprite):
         '''reset character to start position'''
         self.bottom = 250
         self.left = 110
-        self.texture = self.walk_right_textures[0]
+        self.texture = self.idle_texture[self.RIGHT][0]
 
     def setup_subject(self, input_subject):
         input_subject.push_handlers(self)
 
     def load_textures(self) -> None:
-        
-        self.walk_right_textures = [
-            load_texture(self.char_img, 0+frame, 0, 32, 32) for frame in range(0, 97, 32)
+        R = self.RIGHT
+        L = self.LEFT
+        self.idle_texture[R] = [
+            load_texture(self.char_img, 0, 0, 32, 32)    # frame 1
         ]
-        self.walk_left_textures = [
-            load_texture(self.char_img, 0+frame, 0, 32, 32, flipped_horizontally=True) for frame in range(0, 97, 32)
+        self.idle_texture[L] = [
+            load_texture(self.char_img, 0, 0, 32, 32, flipped_horizontally=True)    # frame 1
         ]
-        climbing = [
-            load_texture(self.char_img, 18*32+frame, 0, 32, 32) for frame in range(0, 97, 32)
+        self.walk_textures[R] = [    # frame 1-4
+            load_texture(self.char_img, 0+frame, 0, 32, 32) for frame in range(0, 4*32, 32)
         ]
-        self.stand_right_textures = [self.walk_right_textures[0]]
-        self.stand_left_textures = [self.walk_left_textures[0]]
-        self.walk_up_textures = climbing
-        self.walk_down_textures = climbing
-        self.texture = self.walk_right_textures[self.cur_texture]
+        self.walk_textures[L] = [     # frame 1-4, flipped left
+            load_texture(self.char_img, 0+frame, 0, 32, 32, flipped_horizontally=True) for frame in range(0, 4*32, 32)
+        ]
+        self.squat_texture[R] = [
+            load_texture(self.char_img, 4*32, 0, 32, 32)    # frame 5
+        ]
+        self.squat_texture[L] = [
+            load_texture(self.char_img, 4*32, 0, 32, 32, flipped_horizontally=True)    # frame 5
+        ]
+        self.jump_upward_texture[R] = [
+            load_texture(self.char_img, 5*32, 0, 32, 32)    # frame 6
+        ]
+        self.jump_upward_texture[L] = [
+            load_texture(self.char_img, 5*32, 0, 32, 32, flipped_horizontally=True)    # frame 6
+        ]
+        self.jump_downward_texture[R] = [
+            load_texture(self.char_img, 6*32, 0, 32, 32)    # frame 7
+        ]
+        self.jump_downward_texture[L] = [
+            load_texture(self.char_img, 6*32, 0, 32, 32, flipped_horizontally=True)    # frame 7
+        ]
+        self.climbing_textures[R] = [      # frame 19-22
+            load_texture(self.char_img, 18*32+frame, 0, 32, 32) for frame in range(0, 4*32, 32)
+        ]
+        self.climbing_textures[L] = [      # frame 19-22
+            load_texture(self.char_img, 18*32+frame, 0, 32, 32, flipped_horizontally=True) for frame in range(0, 4*32, 32)
+        ]
+        self.hit_textures[R] = [
+            load_texture(self.char_img, 8*32, 0, 32, 32),    # frame 9
+            load_texture(self.char_img, 9*32, 0, 32, 32),    # frame 10
+            load_texture(self.char_img, 8*32, 0, 32, 32)    # frame 9
+        ]
+        self.hit_textures[L] = [
+            load_texture(self.char_img, 8*32, 0, 32, 32, flipped_horizontally=True),    # frame 9
+            load_texture(self.char_img, 9*32, 0, 32, 32, flipped_horizontally=True),    # frame 10
+            load_texture(self.char_img, 8*32, 0, 32, 32, flipped_horizontally=True)    # frame 9
+        ]
+        self.slash_textures[R] = [
+            load_texture(self.char_img, 11*32, 0, 32, 32),    # frame 12, preparation
+            load_texture(self.char_img, 10*32, 0, 32, 32),    # frame 11
+            load_texture(self.char_img, 11*32, 0, 32, 32),    # frame 12
+            load_texture(self.char_img, 12*32, 0, 32, 32)    # frame 13
+        ]
+        self.slash_textures[L] = [
+            load_texture(self.char_img, 11*32, 0, 32, 32, flipped_horizontally=True),    # frame 12, preparation
+            load_texture(self.char_img, 10*32, 0, 32, 32, flipped_horizontally=True),    # frame 11
+            load_texture(self.char_img, 11*32, 0, 32, 32, flipped_horizontally=True),    # frame 12
+            load_texture(self.char_img, 12*32, 0, 32, 32, flipped_horizontally=True)    # frame 13
+        ]
+        self.texture = self.idle_texture[R][self.cur_texture]
         self._set_scale(SCALE)
-        self.update_animation()
 
     def pymunk_moved(self, physics_engine, dx, dy, d_angle):
         """ Handle being moved by the pymunk engine """
-        DEAD_ZONE = 0.1
-        if dx < -DEAD_ZONE and self.right_facing is True:
-            self.right_facing = False
-        elif dx > DEAD_ZONE and self.right_facing is False:
-            self.right_facing = True
+        DEAD_ZONE = 0.5
+        if dx < -DEAD_ZONE and self.facing_right is True:
+            self.facing_right = False
+        elif dx > DEAD_ZONE and self.facing_right is False:
+            self.facing_right = True
+
+        if self.facing_right:
+            face = self.RIGHT
+        else:
+            face = self.LEFT
 
         # add how far we've moved
         self.x_odometer += dx
         self.y_odometer += dy
 
+        # ladder
+        if self.on_ladder and not self.on_ground:
+            if abs(self.y_odometer) > 10:
+                self.y_odometer = 0
+                self.cur_texture += 1
+            if self.cur_texture >= len(self.climbing_textures[0]):
+                self.cur_texture = 0
+            self.texture = self.climbing_textures[face][self.cur_texture]
+            return
+
+        # jumping
+        if not self.on_ground and not self.on_ladder:
+            if dy < -DEAD_ZONE:
+                self.texture = self.jump_downward_texture[face][0]
+                return
+            elif dy > DEAD_ZONE:
+                self.texture = self.jump_upward_texture[face][0]
+                return
+
+        # squatting
+        if self.squatting and self.on_ground:
+            self.texture = self.squat_texture[face][0]
+            return
+
+        # idle
+        if abs(dx) < DEAD_ZONE:
+            self.texture = self.idle_texture[face][0]
+            return
+
+        # walk
         if abs(self.x_odometer) > 20:
             self.x_odometer = 0
             self.cur_texture += 1
-            if self.cur_texture >= len(self.walk_right_textures):
+            if self.cur_texture >= len(self.walk_textures[0]):
                 self.cur_texture = 0
-            if self.right_facing:
-                self.texture = self.walk_right_textures[self.cur_texture]
-            else:
-                self.texture = self.walk_left_textures[self.cur_texture]
-
+            self.texture = self.walk_textures[face][self.cur_texture]
+            
     def on_update(self, delta_time: float = 1/60) -> None:
         return super().on_update(delta_time=delta_time)
 
-    def stop(self):
-        self.change_x = 0
-        self.change_y = 0
+    def squat(self):
+        if self.on_ground and not self.on_ladder:
+            self.squatting = True
         
     def jump(self):
+        self.squatting = False
         if self.on_ground and not self.on_ladder:
             self.impulse = (0.0, self.JUMP_IMPULSE)
 
@@ -106,14 +195,12 @@ class MainActor(AnimatedWalkingSprite):
                 self.force = (0.0,self.MOVE_FORCE_LADDER/2)
             else:
                 self.force = (0.0,0.0)
-        print(f"({self.force[0]:.2f},{self.force[1]:.2f})")
 
     def move_down(self, moving):
         if moving:
             self.force = (0.0,-self.MOVE_FORCE_GROUND)
         else:
             self.force = (0.0,0.0)
-        print(f"({self.force[0]:.2f},{self.force[1]:.2f})")
 
     def move_left(self, moving):
         if moving:     
@@ -132,7 +219,6 @@ class MainActor(AnimatedWalkingSprite):
             else:
                 self.force = (0.0,0.0)
                 self.FRICTION = 1.0
-        print(f"({self.force[0]:.2f},{self.force[1]:.2f})")
 
     def move_right(self, moving):
         if moving:
@@ -151,7 +237,6 @@ class MainActor(AnimatedWalkingSprite):
             else:
                 self.force = (0.0,0.0)
                 self.FRICTION = 1.0
-        print(f"({self.force[0]:.2f},{self.force[1]:.2f})")
 
 
 class Enemy(AnimatedWalkingSprite):

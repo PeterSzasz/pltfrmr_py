@@ -50,9 +50,9 @@ class MainMenu(BaseState):
         self.gui_manager = arcade.gui.UIManager()
 
     def setup(self):
-        player_right = self.player.walk_right_textures[0]
-        player_left = self.player.walk_left_textures[0]
-        player_back = self.player.walk_up_textures[0]
+        player_right = self.player.walk_textures[0][0]
+        player_left = self.player.walk_textures[1][0]
+        player_back = self.player.climbing_textures[0][0]
         player_icon = arcade.gui.UITextureButton(100,100,50,50,player_right, player_left, player_back)
 
         self.v_box.add(player_icon)
@@ -209,7 +209,7 @@ class Gameplay(BaseState, EventDispatcher):
         self.all_sprites.on_update(delta_time)
         self.lvl.on_update(delta_time)
         
-        # replay move, if started explicitly
+        # replay move, if replay started explicitly
         self.replayer.next_move()
 
         # quick controller handling
@@ -230,7 +230,7 @@ class Gameplay(BaseState, EventDispatcher):
                         self.dispatch_event('move_right',True)
                 if xinput_event.type == XInput.EVENT_BUTTON_RELEASED:
                     if xinput_event.button_id == 4096:
-                        self.player.stop()
+                        pass #self.player.stop()    # TODO: replace
                     if xinput_event.button_id == 1:
                         self.dispatch_event('move_up',False)
                     if xinput_event.button_id == 2:
@@ -250,14 +250,12 @@ class Gameplay(BaseState, EventDispatcher):
 
         # check if we win
         if (self.lvl.full_size_width - 120) < self.player.center_x and self.window:
-                # else the next view is shifted too, should find a better fix
-                #arcade.set_viewport(0.0, self.window.width, 0.0, self.window.height)
-                self.dispatch_event('end_level')
-                if self.game_logic.is_next_level():
-                    self.set_next_state(Gameplay(player=self.player, level_no=self.game_logic.next_level()))
-                else:
-                    self.set_next_state(Info(cat='scores'))
-                self.won_level = True
+            self.dispatch_event('end_level')
+            if self.game_logic.is_next_level():
+                self.set_next_state(Gameplay(player=self.player, level_no=self.game_logic.next_level()))
+            else:
+                self.set_next_state(Info(cat='scores'))
+            self.won_level = True
 
         # collision 
         # with boxes
@@ -304,8 +302,6 @@ class Gameplay(BaseState, EventDispatcher):
     def on_key_press(self, symbol: int, modifiers: int) -> None:
 
         if symbol == arcade.key.ESCAPE:
-            # else the next view is shifted too, should find a better fix
-            #arcade.set_viewport(0.0, self.window.width, 0.0, self.window.height)
             self.dispatch_event('end_level')
             self.set_next_state(MainMenu(player=self.player))
         
@@ -317,15 +313,13 @@ class Gameplay(BaseState, EventDispatcher):
 
         if symbol == arcade.key.P:
             # pause the game
-            self.player.stop()  #TODO:replace this w something sensible
+            #self.player.stop()  #TODO:replace this w something sensible
             self.set_next_state(Paused(game_view=self))
 
-        if symbol == arcade.key.SPACE:
-            if self.physics_engine.is_on_ground(self.player) \
-                    and not self.player.on_ladder:
-                self.dispatch_event('jump')
-            else:
-                self.dispatch_event('move_up',True)
+        if symbol == arcade.key.SPACE \
+            and self.physics_engine.is_on_ground(self.player) \
+            and not self.player.on_ladder:
+                self.dispatch_event('squat')
 
         if symbol == arcade.key.UP:
             self.dispatch_event('move_up',True)
@@ -356,17 +350,22 @@ class Gameplay(BaseState, EventDispatcher):
         if symbol == arcade.key.RIGHT:
             self.dispatch_event('move_right',False)
 
+        if symbol == arcade.key.SPACE \
+            and self.physics_engine.is_on_ground(self.player) \
+            and not self.player.on_ladder:
+                self.dispatch_event('jump')
+
 Gameplay.register_event_type('move_right')
 Gameplay.register_event_type('move_left')
 Gameplay.register_event_type('move_up')
 Gameplay.register_event_type('move_down')
 Gameplay.register_event_type('jump')
+Gameplay.register_event_type('squat')
 Gameplay.register_event_type('start_level')
 Gameplay.register_event_type('end_level')
 
 
 class UIColoredLabel(arcade.gui.UILabel):
-    #def __init__(self, x: float = 0, y: float = 0, width: float = None, height: float = None, text: str = "", font_name=('Arial',), font_size: float = 12, text_color: arcade.Color=(255, 255, 255, 255), bold=False, italic=False, stretch=False, anchor_x='left', anchor_y='baseline', align='left', dpi=None, multiline: bool = False, size_hint=None, size_hint_min=None, size_hint_max=None, style=None, bg_color=None, **kwargs):
     def __init__(self, x: float = 0, y: float = 0, width: float = None, height: float = None, text: str = "", font_name=('Arial',), font_size: float = 12, text_color: arcade.Color=(255, 255, 255, 255), bold=False, bg_color=None, **kwargs):
         super().__init__(x=x, y=y, width=width, height=height, text=text, font_name=font_name, font_size=font_size, text_color=text_color, bold=bold, **kwargs)
         self.bg_color = bg_color
