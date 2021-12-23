@@ -8,11 +8,13 @@ from arcade.sprite import FACE_LEFT
 JUMPING = 5     # in continuation of FACE_UP, FACE_DOWN
 SCALE = 2.0
 
+
 class MainActor(AnimatedWalkingSprite):
     """The player character."""
 
-    def __init__(self, input_subject=None) -> None:
+    def __init__(self, input_subject=None, burst_effect=None) -> None:
         super().__init__()
+        self.burst_effect = burst_effect
         if input_subject:   # for this observer
             input_subject.push_handlers(self)
         self.player_jump_snd = load_sound(":resources:sounds/jump5.wav")
@@ -49,6 +51,10 @@ class MainActor(AnimatedWalkingSprite):
         self.y_odometer = 0.0
         self.load_textures()
         self.reset_player()
+
+    def set_burst_effect(self, burst_effect):
+        if burst_effect:
+            self.burst_effect = burst_effect
 
     def reset_player(self):
         '''reset character to start position'''
@@ -141,7 +147,7 @@ class MainActor(AnimatedWalkingSprite):
         self.y_odometer += dy
 
         # ladder
-        if self.on_ladder and not self.on_ground:
+        if self.on_ladder and not self.on_ground and not self.on_jetpack:
             if abs(self.y_odometer) > 10:
                 self.y_odometer = 0
                 self.cur_texture += 1
@@ -193,6 +199,7 @@ class MainActor(AnimatedWalkingSprite):
         self.on_jetpack = not self.on_jetpack
         if self.on_jetpack:
             self.force = (self.force[0],2997)
+            self.impulse = (0.0, self.JETPACK_BURST)
         print(self.on_jetpack)
 
     def move_up(self, moving):
@@ -201,6 +208,8 @@ class MainActor(AnimatedWalkingSprite):
                 self.force = (0.0,self.MOVE_FORCE_LADDER)
             elif self.on_jetpack:
                 self.impulse = (0.0, self.JETPACK_BURST)
+                if self.burst_effect:
+                    self.burst_effect.jet_burst(self.center_x, self.center_y)
         else:
             if self.on_ladder:
                 self.force = (0.0,self.MOVE_FORCE_LADDER/2)

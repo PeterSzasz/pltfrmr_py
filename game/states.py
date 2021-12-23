@@ -150,6 +150,9 @@ class Gameplay(BaseState, EventDispatcher):
         
         # set player
         self.player.reset_player()
+        from game.effects import JetBurst
+        self.jet_burst = JetBurst()
+        self.player.set_burst_effect(self.jet_burst)
         self.player.setup_subject(self)
         self.all_sprites.append(self.player)
 
@@ -201,6 +204,8 @@ class Gameplay(BaseState, EventDispatcher):
         arcade.draw_circle_filled(900, 1100, 35, arcade.color.YELLOW_ORANGE)
         # draw the map
         self.lvl.draw(self.game_logic.debug)
+        # draw effects
+        self.jet_burst.on_draw()
         # draw player
         self.all_sprites.draw(filter=GL_NEAREST)
         
@@ -208,6 +213,9 @@ class Gameplay(BaseState, EventDispatcher):
         '''handles physics and game logic updates, win conditions, etc'''
         self.all_sprites.on_update(delta_time)
         self.lvl.on_update(delta_time)
+        
+        # update effects viewport offset
+        self.jet_burst.set_offset(self.viewport_left, 0.0)
         
         # replay move, if replay started explicitly
         self.replayer.next_move()
@@ -242,10 +250,10 @@ class Gameplay(BaseState, EventDispatcher):
 
         # apply forces on player and calculate the physical aspect of the game
         self.player.on_ground = self.physics_engine.is_on_ground(self.player)
-        self.physics_engine.apply_impulse(self.player, self.player.impulse)
-        self.player.impulse = (0.0,0.0)
         self.physics_engine.apply_force(self.player, self.player.force)
         self.physics_engine.set_friction(self.player, self.player.FRICTION)
+        self.physics_engine.apply_impulse(self.player, self.player.impulse)
+        self.player.impulse = (0.0,0.0)
         self.physics_engine.step()
 
         # check if we win
