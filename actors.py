@@ -39,8 +39,10 @@ class MainActor(AnimatedWalkingSprite):
         self.MOVE_FORCE_AIR = 1800
         self.MOVE_FORCE_LADDER = self.MOVE_FORCE_GROUND/1.55
         self.JUMP_IMPULSE = 1300
+        self.JETPACK_BURST = 200
         self.on_ladder = False
         self.on_ground = True
+        self.on_jetpack = False
         self.squatting = False
         self.facing_right = True
         self.x_odometer = 0.0
@@ -168,7 +170,7 @@ class MainActor(AnimatedWalkingSprite):
             return
 
         # walk
-        if abs(self.x_odometer) > 20:
+        if not self.on_jetpack and abs(self.x_odometer) > 20:
             self.x_odometer = 0
             self.cur_texture += 1
             if self.cur_texture >= len(self.walk_textures[0]):
@@ -187,54 +189,70 @@ class MainActor(AnimatedWalkingSprite):
         if self.on_ground and not self.on_ladder:
             self.impulse = (0.0, self.JUMP_IMPULSE)
 
+    def jetpack(self):
+        self.on_jetpack = not self.on_jetpack
+        if self.on_jetpack:
+            self.force = (self.force[0],2997)
+        print(self.on_jetpack)
+
     def move_up(self, moving):
-        if moving and self.on_ladder:
-            self.force = (0.0,self.MOVE_FORCE_LADDER)
+        if moving:
+            if self.on_ladder:
+                self.force = (0.0,self.MOVE_FORCE_LADDER)
+            elif self.on_jetpack:
+                self.impulse = (0.0, self.JETPACK_BURST)
         else:
             if self.on_ladder:
                 self.force = (0.0,self.MOVE_FORCE_LADDER/2)
-            else:
+            elif not self.on_jetpack:
                 self.force = (0.0,0.0)
 
     def move_down(self, moving):
         if moving:
-            self.force = (0.0,-self.MOVE_FORCE_GROUND)
-        else:
+            if self.on_ladder:
+                self.force = (0.0,-self.MOVE_FORCE_GROUND)
+            elif self.on_jetpack:
+                self.impulse = (0.0, -self.JETPACK_BURST)
+        elif not self.on_jetpack:
             self.force = (0.0,0.0)
 
     def move_left(self, moving):
         if moving:     
-            if self.on_ground:       
-                self.force = (-self.MOVE_FORCE_GROUND, 0)
+            if self.on_ground and not self.on_jetpack:       
+                self.force = (-self.MOVE_FORCE_GROUND, 0.0)
                 self.FRICTION = 0.0
+            elif self.on_jetpack:
+                self.impulse = (-self.JETPACK_BURST, 0.0)
             elif self.on_ladder:
                 h_force = self.force[1]
                 self.force = (-self.MOVE_FORCE_LADDER,h_force)
             else:
-                self.force = (-self.MOVE_FORCE_AIR, 0)
+                self.force = (-self.MOVE_FORCE_AIR, 0.0)
         else:
             if self.on_ladder and not self.on_ground:
                 h_force = self.force[1]
                 self.force = (0.0,h_force)
-            else:
+            elif not self.on_jetpack:
                 self.force = (0.0,0.0)
                 self.FRICTION = 1.0
 
     def move_right(self, moving):
         if moving:
-            if self.on_ground:      
-                self.force = (self.MOVE_FORCE_GROUND, 0)
+            if self.on_ground and not self.on_jetpack:      
+                self.force = (self.MOVE_FORCE_GROUND, 0.0)
                 self.FRICTION = 0.0
+            elif self.on_jetpack:
+                self.impulse = (self.JETPACK_BURST, 0.0)
             elif self.on_ladder:
                 h_force = self.force[1]
                 self.force = (self.MOVE_FORCE_LADDER,h_force)
             else:
-                self.force = (self.MOVE_FORCE_AIR, 0)
+                self.force = (self.MOVE_FORCE_AIR, 0.0)
         else:
             if self.on_ladder and not self.on_ground:
                 h_force = self.force[1]
                 self.force = (0.0,h_force)
-            else:
+            elif not self.on_jetpack:
                 self.force = (0.0,0.0)
                 self.FRICTION = 1.0
 

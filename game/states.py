@@ -333,6 +333,9 @@ class Gameplay(BaseState, EventDispatcher):
         if symbol == arcade.key.RIGHT:
             self.dispatch_event('move_right',True)
 
+        if symbol == arcade.key.J:
+            self.dispatch_event('jetpack')
+
         if symbol == arcade.key.PRINT:
             image = arcade.get_image()
             image.save("screenshot.png", "PNG")
@@ -359,8 +362,9 @@ Gameplay.register_event_type('move_right')
 Gameplay.register_event_type('move_left')
 Gameplay.register_event_type('move_up')
 Gameplay.register_event_type('move_down')
-Gameplay.register_event_type('jump')
 Gameplay.register_event_type('squat')
+Gameplay.register_event_type('jump')
+Gameplay.register_event_type('jetpack')
 Gameplay.register_event_type('start_level')
 Gameplay.register_event_type('end_level')
 
@@ -425,6 +429,7 @@ class Conf(BaseState):
         super().on_key_press(symbol, modifiers)
         if symbol == arcade.key.ENTER or symbol == arcade.key.ESCAPE:
             self.set_next_state(MainMenu(player=self.player))
+
 
 class Info(BaseState):
     """

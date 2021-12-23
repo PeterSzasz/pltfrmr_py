@@ -19,7 +19,10 @@ class MovementLogger:
 
     def start_level(self):
         self.start_time = time.time()
-        print(f"start level: {self.start_time:.2f}")
+        if self.logging:
+            tmp = {"event": "start_level", "param": None, "time": self.start_time}
+            self.movement_log.append(tmp)
+        print(f"START level: {self.start_time:.2f}")
 
     def end_level(self):
         timestamp = time.time()-self.start_time
@@ -28,7 +31,7 @@ class MovementLogger:
             self.movement_log.append(tmp)
             with open("movement.json", 'w') as logfile:
                 json.dump(self.movement_log, logfile, indent=2)
-        print(f"end level: {timestamp:.2f}")
+        print(f"END level: {timestamp:.2f}")
 
     def jump(self):
         timestamp = time.time()-self.start_time
@@ -36,6 +39,13 @@ class MovementLogger:
             tmp = {"event": "jump", "param": None, "time": timestamp}
             self.movement_log.append(tmp)
         print(f"Jump: {timestamp:.2f}")
+
+    def jetpack(self):
+        timestamp = time.time()-self.start_time
+        if self.logging:
+            tmp = {"event": "jetpack", "param": None, "time": timestamp}
+            self.movement_log.append(tmp)
+        print(f"Jetpack: {timestamp:.2f}")
 
     def move_up(self, moving):
         timestamp = time.time()-self.start_time
