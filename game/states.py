@@ -76,7 +76,7 @@ class MainMenu(BaseState):
         )
 
     def on_click_start(self, event):
-        self.set_next_state(Gameplay(player=self.player,game_logic=self.game_logic,level_no=1))
+        self.set_next_state(Gameplay(level_no=self.game_logic.actual_level))
 
     def on_click_conf(self, event):
         self.set_next_state(Conf())
@@ -101,7 +101,7 @@ class MainMenu(BaseState):
     def on_key_press(self, symbol: int, modifiers: int):
         super().on_key_press(symbol, modifiers)
         if symbol == arcade.key.ENTER:
-            self.set_next_state(Gameplay(level_no=1))
+            self.set_next_state(Gameplay(level_no=self.game_logic.actual_level))
         if symbol == arcade.key.ESCAPE:
             self.window.on_close()
 
@@ -109,7 +109,7 @@ class MainMenu(BaseState):
         if any(XInput.get_connected()):
             xinput_status = XInput.get_button_values(XInput.get_state(0))
             if xinput_status['A']:
-                self.set_next_state(Gameplay(level_no=1))
+                self.set_next_state(Gameplay(level_no=self.game_logic.actual_level))
             if xinput_status['Y']:
                 self.window.on_close()
 
@@ -120,6 +120,7 @@ class Gameplay(BaseState, EventDispatcher):
     """
     def __init__(self, window=None, game_logic=None, player=None, level_no: int = 1):
         super().__init__(window, game_logic, player)
+        self.level_no = level_no
         # Viewport settings
         self.LEFT_VIEW_MARGIN = 200
         self.RIGHT_VIEW_MARGIN = 300
@@ -142,7 +143,7 @@ class Gameplay(BaseState, EventDispatcher):
         self.WALL_FRICTION = 0.7
         self.DYNAMIC_ITEM_FRICTION = 0.6
 
-    def setup(self, level_no: int = 1) -> None:
+    def setup(self) -> None:
         """Initializes a level. Handles keyb input. Renders."""
 
         # Set up the empty sprite lists
@@ -162,7 +163,7 @@ class Gameplay(BaseState, EventDispatcher):
         self.replayer = LogReplay(self.movement_logger)
 
         # map
-        self.lvl = MapLoader(f"assets/maps/map_{level_no}.json")
+        self.lvl = MapLoader(f"assets/maps/map_{self.level_no}.json")
         # test enemy
         if self.game_logic.difficulty == 1:
             enemies = EasyEnemies().get_enemy((500,500),self.game_logic.debug)
@@ -191,6 +192,13 @@ class Gameplay(BaseState, EventDispatcher):
                                             friction=self.WALL_FRICTION,
                                             collision_type="wall",
                                             body_type=arcade.PymunkPhysicsEngine.STATIC)
+        self.physics_engine.add_sprite_list(self.lvl.scene.get_sprite_list("boxes"),
+                                            mass=1,
+                                            friction=self.DYNAMIC_ITEM_FRICTION,
+                                            collision_type="box")
+        if self.lvl.scene.get_sprite_list("moving_platforms"):
+            self.physics_engine.add_sprite_list(self.lvl.scene.get_sprite_list("moving_platforms"),
+                                                body_type=arcade.PymunkPhysicsEngine.KINEMATIC)
         self.dispatch_event('start_level')
 
     def on_draw(self) -> None:
@@ -256,6 +264,31 @@ class Gameplay(BaseState, EventDispatcher):
         self.player.impulse = (0.0,0.0)
         self.physics_engine.step()
 
+        # move platforms
+        for platform in self.lvl.scene.get_sprite_list("moving_platforms"):
+            if platform.boundary_right \
+                and platform.change_x > 0 \
+                and platform.right > platform.boundary_right:
+                platform.change_x *= -1
+            elif platform.boundary_left \
+                and platform.change_x < 0 \
+                and platform.left < platform.boundary_left:
+                platform.change_x *= -1
+            if platform.boundary_top \
+                and platform.change_y > 0 \
+                and platform.top > platform.boundary_top:
+                platform.change_y *= -1
+            elif platform.boundary_bottom \
+                and platform.change_y < 0 \
+                and platform.bottom < platform.boundary_bottom:
+                platform.change_y *= -1
+
+            # Figure out and set our moving platform velocity.
+            # Pymunk uses velocity is in pixels per second. If we instead have
+            # pixels per frame, we need to convert.
+            velocity = (platform.change_x * 1 / delta_time, platform.change_y * 1 / delta_time)
+            self.physics_engine.set_velocity(platform, velocity)
+
         # check if we win
         if (self.lvl.full_size_width - 120) < self.player.center_x and self.window:
             self.dispatch_event('end_level')
@@ -267,10 +300,10 @@ class Gameplay(BaseState, EventDispatcher):
 
         # collision 
         # with boxes
-        colliding_boxes = arcade.check_for_collision_with_list(self.player, self.lvl.scene.get_sprite_list("boxes"))
-        for boxes in colliding_boxes:
-            boxes.remove_from_sprite_lists()
-            self.boxes_found += 1
+        # colliding_boxes = arcade.check_for_collision_with_list(self.player, self.lvl.scene.get_sprite_list("boxes"))
+        # for boxes in colliding_boxes:
+        #     boxes.remove_from_sprite_lists()
+        #     self.boxes_found += 1
         # with ladders
         if arcade.check_for_collision_with_list(self.player, self.lvl.scene.get_sprite_list("ladders")):
             if not self.player.on_ladder:

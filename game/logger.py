@@ -38,7 +38,7 @@ class MovementLogger:
         if self.logging:
             tmp = {"event": "jump", "param": None, "time": timestamp}
             self.movement_log.append(tmp)
-        print(f"Jump: {timestamp:.2f}")
+        print(f"JUMP up: {timestamp:.2f}")
 
     def jetpack(self):
         timestamp = time.time()-self.start_time

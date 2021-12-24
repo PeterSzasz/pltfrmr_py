@@ -200,7 +200,6 @@ class MainActor(AnimatedWalkingSprite):
         if self.on_jetpack:
             self.force = (self.force[0],2997)
             self.impulse = (0.0, self.JETPACK_BURST)
-        print(self.on_jetpack)
 
     def move_up(self, moving):
         if moving:
@@ -336,7 +335,6 @@ class EnemyFactory():
                 x=randint(pos[0]-200,pos[0]+200)
                 y=randint(pos[0]-200,pos[0]+200)
                 file_format = choice(self.enemies)
-                print(file_format)
                 new_enemy = Enemy(center_x=x,center_y=y,file_format=file_format)
                 new_enemy.set_damage(self.base_damage)
                 new_enemies.append(new_enemy)
