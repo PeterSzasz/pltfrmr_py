@@ -22,6 +22,8 @@ class JetBurst:
         self.burst_list = []
         self.offset_x = 0.0
         self.offset_y = 0.0
+        self.burst_time = 0.2
+        self.burst_start = None
         # Program to visualize the points
         window = get_window()
         self.program = window.ctx.load_program(
@@ -34,11 +36,16 @@ class JetBurst:
         self.offset_x = x
         self.offset_y = y
 
+    def start_burst(self):
+        self.burst_start = time()
+
     def jet_burst(self, x, y):
+        if not self.burst_start:
+            return
         window = get_window()
         def _gen_initial_data(initial_x, initial_y):
             """ Generate data for each particle """
-            for _ in range(100):
+            for _ in range(10):
                 # dx = uniform(-.1, .1)
                 # dy = uniform(-.2, 0.0)
                 base_angle = 1.0 * 3.1415
@@ -73,6 +80,9 @@ class JetBurst:
         # Create the Burst object and add it to the list of bursts
         burst = Burst(buffer=buffer, vao=vao, start_time=time())
         self.burst_list.append(burst)
+
+        if (time() - self.burst_start) > self.burst_time:
+            self.burst_start = None
 
     def on_draw(self):
         window = get_window()

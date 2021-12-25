@@ -184,6 +184,10 @@ class MainActor(AnimatedWalkingSprite):
             self.texture = self.walk_textures[face][self.cur_texture]
             
     def on_update(self, delta_time: float = 1/60) -> None:
+        if self.burst_effect:
+            self.burst_effect.jet_burst(self.center_x, self.center_y)
+        print(self.change_x)
+        print(self.change_y)
         return super().on_update(delta_time=delta_time)
 
     def squat(self):
@@ -208,7 +212,7 @@ class MainActor(AnimatedWalkingSprite):
             elif self.on_jetpack:
                 self.impulse = (0.0, self.JETPACK_BURST)
                 if self.burst_effect:
-                    self.burst_effect.jet_burst(self.center_x, self.center_y)
+                    self.burst_effect.start_burst()
         else:
             if self.on_ladder:
                 self.force = (0.0,self.MOVE_FORCE_LADDER/2)
