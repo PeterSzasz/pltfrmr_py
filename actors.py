@@ -186,8 +186,6 @@ class MainActor(AnimatedWalkingSprite):
     def on_update(self, delta_time: float = 1/60) -> None:
         if self.burst_effect:
             self.burst_effect.jet_burst(self.center_x, self.center_y)
-        print(self.change_x)
-        print(self.change_y)
         return super().on_update(delta_time=delta_time)
 
     def squat(self):

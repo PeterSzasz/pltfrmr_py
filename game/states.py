@@ -196,7 +196,7 @@ class Gameplay(BaseState, EventDispatcher):
                                             mass=1,
                                             friction=self.DYNAMIC_ITEM_FRICTION,
                                             collision_type="box")
-        if self.lvl.scene.get_sprite_list("moving_platforms"):
+        if "moving_platforms" in self.lvl.scene.name_mapping:
             self.physics_engine.add_sprite_list(self.lvl.scene.get_sprite_list("moving_platforms"),
                                                 body_type=arcade.PymunkPhysicsEngine.KINEMATIC)
         self.dispatch_event('start_level')
@@ -265,7 +265,11 @@ class Gameplay(BaseState, EventDispatcher):
         self.physics_engine.step()
 
         # move platforms
-        for platform in self.lvl.scene.get_sprite_list("moving_platforms"):
+        if "moving_platforms" in self.lvl.scene.name_mapping:
+            platform_list = self.lvl.scene.get_sprite_list("moving_platforms")
+        else:
+            platform_list = []
+        for platform in platform_list:
             if platform.boundary_right \
                 and platform.change_x > 0 \
                 and platform.right > platform.boundary_right:
@@ -347,6 +351,7 @@ class Gameplay(BaseState, EventDispatcher):
             self.set_next_state(MainMenu(player=self.player))
         
         if symbol == arcade.key.R:
+            '''start movement replay'''
             self.movement_logger.logging = False
             self.movement_logger.setup_subject(self.replayer)
             self.replayer.set_observer(self.player)
