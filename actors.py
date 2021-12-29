@@ -29,12 +29,11 @@ class MainActor(AnimatedWalkingSprite):
         self.slash_textures = [[]]*2
         self.RIGHT = 0
         self.LEFT = 1
-        self.cur_texture = 0
-        self.force = (0.0,0.0)
-        self.impulse = (0.0,0.0)
+        # self.force = (0.0,0.0)
+        # self.impulse = (0.0,0.0)
         self.MASS = 2.0
         self.DAMPING = 0.2
-        self.FRICTION = 1.0
+        # self.FRICTION = 1.0
         self.MAX_H_SPEED = 450
         self.MAX_V_SPEED = 1600
         self.MOVE_FORCE_GROUND = 6000
@@ -42,13 +41,14 @@ class MainActor(AnimatedWalkingSprite):
         self.MOVE_FORCE_LADDER = self.MOVE_FORCE_GROUND/1.55
         self.JUMP_IMPULSE = 1300
         self.JETPACK_BURST = 200
-        self.on_ladder = False
-        self.on_ground = True
-        self.on_jetpack = False
-        self.squatting = False
-        self.facing_right = True
-        self.x_odometer = 0.0
-        self.y_odometer = 0.0
+        #self.cur_texture = 0
+        # self.on_ladder = False
+        # self.on_ground = True
+        # self.on_jetpack = False
+        # self.squatting = False
+        # self.facing_right = True
+        # self.x_odometer = 0.0
+        # self.y_odometer = 0.0
         self.load_textures()
         self.reset_player()
 
@@ -60,6 +60,17 @@ class MainActor(AnimatedWalkingSprite):
         '''reset character to start position'''
         self.bottom = 250
         self.left = 110
+        self.cur_texture = 0
+        self.on_ladder = False
+        self.on_ground = True
+        self.on_jetpack = False
+        self.squatting = False
+        self.facing_right = True
+        self.x_odometer = 0.0
+        self.y_odometer = 0.0
+        self.force = (0.0,0.0)
+        self.impulse = (0.0,0.0)
+        self.FRICTION = 1.0
         self.texture = self.idle_texture[self.RIGHT][0]
 
     def setup_subject(self, input_subject):
@@ -126,7 +137,7 @@ class MainActor(AnimatedWalkingSprite):
             load_texture(self.char_img, 11*32, 0, 32, 32, flipped_horizontally=True),    # frame 12
             load_texture(self.char_img, 12*32, 0, 32, 32, flipped_horizontally=True)    # frame 13
         ]
-        self.texture = self.idle_texture[R][self.cur_texture]
+        self.texture = self.idle_texture[R][0]
         self._set_scale(SCALE)
 
     def pymunk_moved(self, physics_engine, dx, dy, d_angle):
@@ -197,11 +208,14 @@ class MainActor(AnimatedWalkingSprite):
         if self.on_ground and not self.on_ladder:
             self.impulse = (0.0, self.JUMP_IMPULSE)
 
-    def jetpack(self):
+    def jetpack(self, gravity=1500):
         self.on_jetpack = not self.on_jetpack
         if self.on_jetpack:
-            self.force = (self.force[0],2997)
+            jet_force = self.MASS * gravity
+            self.force = (self.force[0],jet_force)
             self.impulse = (0.0, self.JETPACK_BURST)
+        else:
+            self.force = (0.0,0.0)
 
     def move_up(self, moving):
         if moving:

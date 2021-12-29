@@ -40,12 +40,12 @@ class MovementLogger:
             self.movement_log.append(tmp)
         print(f"JUMP up: {timestamp:.2f}")
 
-    def jetpack(self):
+    def jetpack(self, gravity):
         timestamp = time.time()-self.start_time
         if self.logging:
-            tmp = {"event": "jetpack", "param": None, "time": timestamp}
+            tmp = {"event": "jetpack", "param": gravity, "time": timestamp}
             self.movement_log.append(tmp)
-        print(f"Jetpack: {timestamp:.2f}")
+        print(f"Jetpack ({gravity}): {timestamp:.2f}")
 
     def move_up(self, moving):
         timestamp = time.time()-self.start_time

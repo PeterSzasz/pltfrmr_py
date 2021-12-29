@@ -270,25 +270,25 @@ class Gameplay(BaseState, EventDispatcher):
         else:
             platform_list = []
         for platform in platform_list:
-            if platform.boundary_right \
+            if  (platform.boundary_right \
                 and platform.change_x > 0 \
-                and platform.right > platform.boundary_right:
-                platform.change_x *= -1
-            elif platform.boundary_left \
+                and platform.right > platform.boundary_right) \
+                or \
+                (platform.boundary_left \
                 and platform.change_x < 0 \
-                and platform.left < platform.boundary_left:
+                and platform.left < platform.boundary_left):
                 platform.change_x *= -1
-            if platform.boundary_top \
+            if  (platform.boundary_top \
                 and platform.change_y > 0 \
-                and platform.top > platform.boundary_top:
-                platform.change_y *= -1
-            elif platform.boundary_bottom \
+                and platform.top > platform.boundary_top) \
+                or \
+                (platform.boundary_bottom \
                 and platform.change_y < 0 \
-                and platform.bottom < platform.boundary_bottom:
+                and platform.bottom < platform.boundary_bottom):
                 platform.change_y *= -1
 
             # Figure out and set our moving platform velocity.
-            # Pymunk uses velocity is in pixels per second. If we instead have
+            # Pymunk uses velocity in pixels per second. If we instead have
             # pixels per frame, we need to convert.
             velocity = (platform.change_x * 1 / delta_time, platform.change_y * 1 / delta_time)
             self.physics_engine.set_velocity(platform, velocity)
@@ -380,7 +380,7 @@ class Gameplay(BaseState, EventDispatcher):
             self.dispatch_event('move_right',True)
 
         if symbol == arcade.key.J:
-            self.dispatch_event('jetpack')
+            self.dispatch_event('jetpack',self.GRAVITY)
 
         if symbol == arcade.key.PRINT:
             image = arcade.get_image()
