@@ -1,6 +1,5 @@
 # views for menu, game, scores, etc
 
-import XInput
 import arcade
 import arcade.gui
 from arcade.arcade_types import Point
@@ -23,11 +22,13 @@ class BaseState(View):
             super().__init__(context.window)
             self.game_logic = context.game_logic
             self.player = context.player
+            self.input = context.game_logic.input
             self.context = context
         else:
             super().__init__()
             self.game_logic = None
             self.player = None
+            self.input = None
             self.context = None
         arcade.set_background_color(arcade.color.LIGHT_MOSS_GREEN)
         self.bkg_image = arcade.load_texture("assets/backgrounds/bkg_4-rock.png")
@@ -40,6 +41,7 @@ class BaseState(View):
         """
         self.game_logic = context.game_logic
         self.player = context.player
+        self.input = context.game_logic.input
         self.context = context
 
     def set_next_state(self, state: 'BaseState'):
@@ -118,14 +120,10 @@ class MainMenu(BaseState):
             self.set_next_state(Gameplay(self.game_logic.actual_level))
         if symbol == arcade.key.ESCAPE:
             self.window.on_close()
+        self.input.on_key_press(symbol,modifiers)
 
     def on_update(self, delta_time: float):
-        if any(XInput.get_connected()):
-            xinput_status = XInput.get_button_values(XInput.get_state(0))
-            if xinput_status['A']:
-                self.set_next_state(Gameplay(self.context,self.game_logic.actual_level))
-            if xinput_status['Y']:
-                self.window.on_close()
+        self.input.update()
 
 
 class Gameplay(BaseState, EventDispatcher):
@@ -165,11 +163,11 @@ class Gameplay(BaseState, EventDispatcher):
         self.all_sprites = arcade.SpriteList()
         
         # set player
-        self.player.reset_player()
+        self.player.reset_player(self.GRAVITY)
         from game.effects import JetBurst
         self.jet_burst = JetBurst()
         self.player.set_burst_effect(self.jet_burst)
-        self.player.setup_subject(self)
+        self.player.setup_subject(self.game_logic.input)
         self.all_sprites.append(self.player)
 
         # add logger and replayer
@@ -243,33 +241,8 @@ class Gameplay(BaseState, EventDispatcher):
         # replay move, if replay started explicitly
         self.replayer.next_move()
 
-        # quick controller handling
-        for xinput_event in XInput.get_events():
-            if xinput_event.user_index == 0:
-                if xinput_event.type == XInput.EVENT_BUTTON_PRESSED:
-                    if xinput_event.button_id == 4096 and \
-                        self.physics_engine.is_on_ground(self.player) and \
-                        not self.player.on_ladder:
-                            self.dispatch_event('jump')
-                    if xinput_event.button_id == 1:
-                        self.dispatch_event('move_up',True)
-                    if xinput_event.button_id == 2:
-                        self.dispatch_event('move_down',True)
-                    if xinput_event.button_id == 4:
-                        self.dispatch_event('move_left',True)
-                    if xinput_event.button_id == 8:
-                        self.dispatch_event('move_right',True)
-                if xinput_event.type == XInput.EVENT_BUTTON_RELEASED:
-                    if xinput_event.button_id == 4096:
-                        pass #self.player.stop()    # TODO: replace
-                    if xinput_event.button_id == 1:
-                        self.dispatch_event('move_up',False)
-                    if xinput_event.button_id == 2:
-                        self.dispatch_event('move_down',False)
-                    if xinput_event.button_id == 4:
-                        self.dispatch_event('move_left',False)
-                    if xinput_event.button_id == 8:
-                        self.dispatch_event('move_right',False)
+        # controller handling
+        self.input.update()
 
         # apply forces on player and calculate the physical aspect of the game
         self.player.on_ground = self.physics_engine.is_on_ground(self.player)
@@ -366,70 +339,24 @@ class Gameplay(BaseState, EventDispatcher):
             self.set_next_state(MainMenu())
         
         if symbol == arcade.key.R:
-            '''start movement replay'''
             self.movement_logger.logging = False
             self.movement_logger.setup_subject(self.replayer)
             self.replayer.set_observer(self.player)
             self.replayer.start_play(filename="movement.json")
 
         if symbol == arcade.key.P:
-            # pause the game
             #self.player.stop()  #TODO:replace this w something sensible
             self.set_next_state(Paused(self))
-
-        if symbol == arcade.key.SPACE \
-            and self.physics_engine.is_on_ground(self.player) \
-            and not self.player.on_ladder:
-                self.dispatch_event('squat')
-
-        if symbol == arcade.key.UP:
-            self.dispatch_event('move_up',True)
-
-        if symbol == arcade.key.DOWN:
-            self.dispatch_event('move_down',True)
-
-        if symbol == arcade.key.LEFT:
-            self.dispatch_event('move_left',True)
-
-        if symbol == arcade.key.RIGHT:
-            self.dispatch_event('move_right',True)
-
-        if symbol == arcade.key.J:
-            self.dispatch_event('jetpack',self.GRAVITY)
-
-        if symbol == arcade.key.C:
-            pass
-            # use previously saved/set combo moves
 
         if symbol == arcade.key.PRINT:
             image = arcade.get_image()
             image.save("screenshot.png", "PNG")
 
+        self.input.on_key_press(symbol,modifiers)
+
     def on_key_release(self, symbol: int, modifiers: int) -> None:
-        if symbol == arcade.key.UP:
-            self.dispatch_event('move_up',False)
+        self.input.on_key_release(symbol,modifiers)
 
-        if symbol == arcade.key.DOWN:
-            self.dispatch_event('move_down',False)
-
-        if symbol == arcade.key.LEFT:
-            self.dispatch_event('move_left',False)
-
-        if symbol == arcade.key.RIGHT:
-            self.dispatch_event('move_right',False)
-
-        if symbol == arcade.key.SPACE \
-            and self.physics_engine.is_on_ground(self.player) \
-            and not self.player.on_ladder:
-                self.dispatch_event('jump')
-
-Gameplay.register_event_type('move_right')
-Gameplay.register_event_type('move_left')
-Gameplay.register_event_type('move_up')
-Gameplay.register_event_type('move_down')
-Gameplay.register_event_type('squat')
-Gameplay.register_event_type('jump')
-Gameplay.register_event_type('jetpack')
 Gameplay.register_event_type('start_level')
 Gameplay.register_event_type('end_level')
 

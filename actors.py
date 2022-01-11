@@ -29,11 +29,8 @@ class MainActor(AnimatedWalkingSprite):
         self.slash_textures = [[]]*2
         self.RIGHT = 0
         self.LEFT = 1
-        # self.force = (0.0,0.0)
-        # self.impulse = (0.0,0.0)
         self.MASS = 2.0
         self.DAMPING = 0.2
-        # self.FRICTION = 1.0
         self.MAX_H_SPEED = 450
         self.MAX_V_SPEED = 1600
         self.MOVE_FORCE_GROUND = 6000
@@ -41,22 +38,15 @@ class MainActor(AnimatedWalkingSprite):
         self.MOVE_FORCE_LADDER = self.MOVE_FORCE_GROUND/1.55
         self.JUMP_IMPULSE = 1300
         self.JETPACK_BURST = 200
-        #self.cur_texture = 0
-        # self.on_ladder = False
-        # self.on_ground = True
-        # self.on_jetpack = False
-        # self.squatting = False
-        # self.facing_right = True
-        # self.x_odometer = 0.0
-        # self.y_odometer = 0.0
+        self.WORLD_GRAVITY = 1500
         self.load_textures()
-        self.reset_player()
+        self.reset_player(self.WORLD_GRAVITY)
 
     def set_burst_effect(self, burst_effect):
         if burst_effect:
             self.burst_effect = burst_effect
 
-    def reset_player(self):
+    def reset_player(self, world_gravity):
         '''reset character to start position'''
         self.bottom = 250
         self.left = 110
@@ -71,6 +61,7 @@ class MainActor(AnimatedWalkingSprite):
         self.force = (0.0,0.0)
         self.impulse = (0.0,0.0)
         self.FRICTION = 1.0
+        self.WORLD_GRAVITY = world_gravity
         self.texture = self.idle_texture[self.RIGHT][0]
 
     def setup_subject(self, input_subject):
@@ -208,10 +199,10 @@ class MainActor(AnimatedWalkingSprite):
         if self.on_ground and not self.on_ladder:
             self.impulse = (0.0, self.JUMP_IMPULSE)
 
-    def jetpack(self, gravity=1500):
+    def jetpack(self):
         self.on_jetpack = not self.on_jetpack
         if self.on_jetpack:
-            jet_force = self.MASS * gravity
+            jet_force = self.MASS * self.WORLD_GRAVITY
             self.force = (self.force[0],jet_force)
             self.impulse = (0.0, self.JETPACK_BURST)
         else:
