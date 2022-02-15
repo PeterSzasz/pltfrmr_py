@@ -11,9 +11,9 @@ Features:
 ![alt text](screenshot.png)
 
 TODOs:
-- more and more pyglet, less n less arcade
+- more and more pyglet, less n less arcade (if possible)
 - soundeffects, maybe music
 - jetpack, box-throwing, etc. capabilities
 - rpg like stats but then it needs more levels
-- proper controller support
-- shaders
+- better controller support
+- shader effects, in proper structured way
